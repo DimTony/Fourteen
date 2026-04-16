@@ -4,19 +4,19 @@ EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY ["Genderize.API/Genderize.API.csproj", "Genderize.API/"]
-COPY ["Genderize.Application/Genderize.Application.csproj", "Genderize.Application/"]
-COPY ["Genderize.Infrastructure/Genderize.Infrastructure.csproj", "Genderize.Infrastructure/"]
-COPY ["Genderize.Domain/Genderize.Domain.csproj", "Genderize.Domain/"]
-RUN dotnet restore "Genderize.API/Genderize.API.csproj"
+COPY ["Fourteen.API/Fourteen.API.csproj", "Fourteen.API/"]
+COPY ["Fourteen.Application/Fourteen.Application.csproj", "Fourteen.Application/"]
+COPY ["Fourteen.Infrastructure/Fourteen.Infrastructure.csproj", "Fourteen.Infrastructure/"]
+COPY ["Fourteen.Domain/Fourteen.Domain.csproj", "Fourteen.Domain/"]
+RUN dotnet restore "Fourteen.API/Fourteen.API.csproj"
 COPY . .
-WORKDIR "/src/Genderize.API"
-RUN dotnet build "Genderize.API.csproj" -c Release -o /app/build
+WORKDIR "/src/Fourteen.API"
+RUN dotnet build "Fourteen.API.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Genderize.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Fourteen.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Genderize.API.dll"]
+ENTRYPOINT ["dotnet", "Fourteen.API.dll"]
