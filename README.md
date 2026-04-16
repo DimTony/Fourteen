@@ -6,7 +6,7 @@ A RESTful API service built with .NET 9 that aggregates data from multiple exter
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![AWS ECS](https://img.shields.io/badge/deployed%20on-AWS%20ECS-FF9900)](https://aws.amazon.com/ecs/)
 
-## ?? Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Architecture](#architecture)
@@ -22,7 +22,7 @@ A RESTful API service built with .NET 9 that aggregates data from multiple exter
 - [Known Limitations](#known-limitations)
 - [Contributing](#contributing)
 
-## ?? Overview
+## Overview
 
 Fourteen is a profile classification system that accepts a name, calls three free external APIs (Genderize, Agify, Nationalize), applies classification logic, stores the result in a SQL Server database, and exposes RESTful endpoints to manage that data.
 
@@ -39,16 +39,16 @@ Fourteen is a profile classification system that accepts a name, calls three fre
 
 ### Key Highlights
 
-- ? **Domain-Driven Design (DDD)** architecture
-- ? **CQRS pattern** with MediatR
-- ? **Feature flag system** for endpoint control
-- ? **UUID v7** for ID generation
-- ? **Duplicate prevention** based on name (case-insensitive)
-- ? **Comprehensive error handling** with 502 responses for invalid external API data
-- ? **CORS enabled** for cross-origin requests
-- ? **Docker support** for containerization
-- ? **AWS ECS deployment** with CI/CD pipeline
-- ? **Health check endpoint**
+- **Domain-Driven Design (DDD)** architecture
+- **CQRS pattern** with MediatR
+- **Feature flag system** for endpoint control
+- **UUID v7** for ID generation
+- **Duplicate prevention** based on name (case-insensitive)
+- **Comprehensive error handling** with 502 responses for invalid external API data
+- **CORS enabled** for cross-origin requests
+- **Docker support** for containerization
+- **AWS ECS deployment** with CI/CD pipeline
+- **Health check endpoint**
 
 ### Design Patterns Used
 
@@ -59,16 +59,16 @@ Fourteen is a profile classification system that accepts a name, calls three fre
 - **Factory Pattern** - Profile creation
 - **Feature Flag Pattern** - Runtime feature toggling
 
-## ? Features
+## Features
 
 ### Core Features
 
-- ? **Profile Creation** with external API integration
-- ? **Profile Retrieval** by ID
-- ? **Profile Listing** with optional filters (gender, country, age group)
-- ? **Profile Deletion** with soft/hard delete support
-- ? **Duplicate Detection** - prevents creating duplicate profiles for the same name
-- ? **Case-Insensitive Filtering** - query parameters are normalized
+- **Profile Creation** with external API integration
+- **Profile Retrieval** by ID
+- **Profile Listing** with optional filters (gender, country, age group)
+- **Profile Deletion** with soft/hard delete support
+- **Duplicate Detection** - prevents creating duplicate profiles for the same name
+- **Case-Insensitive Filtering** - query parameters are normalized
 
 ### Technical Features
 
@@ -79,9 +79,9 @@ Fourteen is a profile classification system that accepts a name, calls three fre
 - **CORS Support** - `Access-Control-Allow-Origin: *`
 - **UTC Timestamps** - ISO 8601 format
 
-## ?? API Endpoints
+## API Endpoints
 
-Base URL: `https://your-domain.com` (or `http://localhost:8080` for local)
+Base URL: `https://your-domain.com` (or `http://localhost:5261` for local)
 
 ### 1. Create Profile
 
@@ -91,14 +91,6 @@ Creates a new profile or returns an existing one if the name already exists.
 
 **Request Body:**
 
-	`{ "name": "ella" }`
-
-**Success Response (201 Created):**
-````````
-
-This is the code block that represents the suggested code change:
-
-````````markdown
 	`{ "name": "ella" }`
 
 **Success Response (201 Created):**
@@ -190,23 +182,27 @@ Deletes a profile by its unique identifier.
 - Hard delete removes the profile permanently.
 - Response bodies are in JSON format.
 
-## ?? Getting Started
+## Getting Started
 
 To run this project locally:
 
 1. Clone the repository
-2. Run `docker-compose up` to start the services
-3. Configure your environment variables in the `.env` file
+2. Configure your environment variables in the `.env` or `appsettings.json` file
+3. Run `docker-compose up` or `dotnet run --project Fourteen.API` to start the app
 4. Access the API at `http://localhost:5261`
 
-## ?? Configuration
+## Configuration
 
 Key configuration settings:
 
 - `ASPNETCORE_ENVIRONMENT` - Set to `Development` or `Production`
 - `ConnectionStrings:DefaultConnection` - SQL Server connection string
+- `ExternalApi__GenderizeUrl` - Base URL for Genderize API (e.g., `https://api.genderize.io`)
+- `ExternalApi__AgifyUrl` - Base URL for Agify API (e.g., `https://api.agify.io`)
+- `ExternalApi__NationalizeUrl` - Base URL for Nationalize API (e.g., `https://api.nationalize.io`)
+- `ASPNETCORE_URLS` - URL bindings for the API (e.g., `http://+:8080`)
 
-## ?? Deployment
+## Deployment
 
 This application is containerized using Docker and deployed on AWS ECS.
 
@@ -220,16 +216,9 @@ This application is containerized using Docker and deployed on AWS ECS.
 ### CI/CD Pipeline
 
 - The project includes a GitHub Actions workflow for automated building and deployment.
-- Customize the `deploy.yml` file for your deployment preferences.
+- Customize the `aws-ecs-deploy.yml` file for your deployment preferences.
 
-## ??? Project Structure
-
-- `/src` - Source code of the API
-- `/tests` - Unit and integration tests
-- `/docs` - Documentation files
-- `/deploy` - Deployment scripts and configs
-
-## ?? External APIs
+## External APIs
 
 Fourteen integrates with the following external APIs:
 
@@ -237,7 +226,7 @@ Fourteen integrates with the following external APIs:
 - **Agify** `(https://api.agify.io)` - For age prediction
 - **Nationalize** `(https://api.nationalize.io)` - For nationality prediction
 
-## ?? Classification Logic
+## Classification Logic
 
 The classification logic for age groups is as follows:
 
@@ -249,20 +238,20 @@ The classification logic for age groups is as follows:
 
 These categories are used for better understanding demographic distributions.
 
-## ?? Error Handling
+## Error Handling
 
 - The API uses standard HTTP status codes to indicate the success or failure of requests.
 - Client-side errors (4xx) represent validation issues or resource not found.
 - Server-side errors (5xx) indicate processing failures.
 - Specific error messages are returned in the response body for 400 and 500 errors.
 
-## ?? Known Limitations
+## Known Limitations
 
 - The accuracy of demographic predictions depends on the external APIs and the quality of the input data.
 - Name-based predictions may not always align with actual gender, age, or nationality.
 - Free tier limits of the external APIs may restrict the number of requests.
 
-## ?? Contributing
+## Contributing
 
 Contributions are welcome! Please follow these steps:
 
