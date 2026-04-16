@@ -1,262 +1,274 @@
-# Genderize API
+# Fourteen - Profile Classification API
 
-A modern, production-ready .NET 9 microservice for gender classification based on names. Built with Clean Architecture principles, CQRS pattern using MediatR, and deployed to AWS ECS.
+A RESTful API service built with .NET 9 that aggregates data from multiple external APIs to create, manage, and classify user profiles based on name, gender, age, and nationality predictions.
 
-[![.NET 9](https://img.shields.io/badge/.NET-9.0-purple)](https://dotnet.microsoft.com/)
-[![AWS ECS](https://img.shields.io/badge/AWS-ECS-orange)](https://aws.amazon.com/ecs/)
+[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/download)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![AWS ECS](https://img.shields.io/badge/deployed%20on-AWS%20ECS-FF9900)](https://aws.amazon.com/ecs/)
 
-## Table of Contents
+## ?? Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
 - [Architecture](#architecture)
+- [Features](#features)
+- [API Endpoints](#api-endpoints)
 - [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Running Locally](#running-locally)
-- [API Documentation](#api-documentation)
 - [Configuration](#configuration)
 - [Deployment](#deployment)
 - [Project Structure](#project-structure)
-- [Technologies](#technologies)
+- [External APIs](#external-apis)
+- [Classification Logic](#classification-logic)
+- [Error Handling](#error-handling)
+- [Known Limitations](#known-limitations)
 - [Contributing](#contributing)
-- [License](#license)
 
-## Overview
+## ?? Overview
 
-Genderize API is a scalable microservice that predicts the gender of a person based on their first name. It integrates with the external Genderize.io API and provides a clean, well-structured interface following industry best practices.
+Fourteen is a profile classification system that accepts a name, calls three free external APIs (Genderize, Agify, Nationalize), applies classification logic, stores the result in a SQL Server database, and exposes RESTful endpoints to manage that data.
 
-### Key Capabilities
+### What It Does
 
-- **Gender Classification**: Predict gender with probability scores
-- **Confidence Metrics**: Includes sample size and confidence indicators
-- **Health Monitoring**: Built-in health checks for production readiness
-- **Cloud-Native**: Containerized and deployed on AWS ECS with Fargate
+1. **Accepts a name** via API endpoint
+2. **Calls three external APIs** to gather demographic predictions:
+   - **Genderize** - Predicts gender based on name
+   - **Agify** - Predicts age based on name
+   - **Nationalize** - Predicts nationality based on name
+3. **Applies classification logic** to categorize age groups
+4. **Stores profiles** in a SQL Server database (duplicate prevention)
+5. **Exposes CRUD endpoints** for profile management with filtering capabilities
 
-## Features
+### Key Highlights
 
-- **Clean Architecture**: Separation of concerns with Domain, Application, Infrastructure, and API layers
-- **CQRS Pattern**: Using MediatR for query handling
-- **Domain-Driven Design**: Custom exceptions and validation
-- **Docker Support**: Fully containerized for consistent deployments
-- **AWS ECS Deployment**: Automated CI/CD pipeline with GitHub Actions
-- **Health Checks**: Monitoring endpoints for service health
-- **Structured Logging**: Production-ready logging configuration
-- **High Availability**: Runs on AWS Fargate with auto-scaling capabilities
+- ? **Domain-Driven Design (DDD)** architecture
+- ? **CQRS pattern** with MediatR
+- ? **Feature flag system** for endpoint control
+- ? **UUID v7** for ID generation
+- ? **Duplicate prevention** based on name (case-insensitive)
+- ? **Comprehensive error handling** with 502 responses for invalid external API data
+- ? **CORS enabled** for cross-origin requests
+- ? **Docker support** for containerization
+- ? **AWS ECS deployment** with CI/CD pipeline
+- ? **Health check endpoint**
 
-## Architecture
+### Design Patterns Used
 
-This project follows **Clean Architecture** principles with clear separation of concerns:
+- **CQRS (Command Query Responsibility Segregation)** - Separate read/write operations
+- **Mediator Pattern** - Decoupled request handling via MediatR
+- **Repository Pattern** - Data access abstraction
+- **Result Pattern** - Functional error handling without exceptions
+- **Factory Pattern** - Profile creation
+- **Feature Flag Pattern** - Runtime feature toggling
 
-### Design Patterns
+## ? Features
 
-- **CQRS**: Command Query Responsibility Segregation with MediatR
-- **Repository Pattern**: Abstraction over data access
-- **Dependency Injection**: Built-in .NET DI container
-- **Options Pattern**: Strongly-typed configuration
+### Core Features
 
-## Getting Started
+- ? **Profile Creation** with external API integration
+- ? **Profile Retrieval** by ID
+- ? **Profile Listing** with optional filters (gender, country, age group)
+- ? **Profile Deletion** with soft/hard delete support
+- ? **Duplicate Detection** - prevents creating duplicate profiles for the same name
+- ? **Case-Insensitive Filtering** - query parameters are normalized
 
-### Prerequisites
+### Technical Features
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [Docker](https://www.docker.com/get-started) (optional, for containerization)
-- [Git](https://git-scm.com/)
-- An IDE (Visual Studio 2022, VS Code, or Rider)
+- **Feature Flags** - Enable/disable endpoints via configuration
+- **Pipeline Behaviors** - Cross-cutting concerns (feature flag validation)
+- **Structured Logging** - Ready for integration (Serilog-compatible)
+- **Health Checks** - `/api/health` endpoint
+- **CORS Support** - `Access-Control-Allow-Origin: *`
+- **UTC Timestamps** - ISO 8601 format
 
-### Installation
+## ?? API Endpoints
 
-1. **Clone the repository**
-	git clone https://github.com/DimTony/Genderize.git cd Genderize
-2. **Restore dependencies**
-	dotnet restore
-3. **Build the solution**
-	dotnet build --configuration Release
-4. **Run tests**
-	dotnet test --configuration Release
+Base URL: `https://your-domain.com` (or `http://localhost:8080` for local)
 
-### Running Locally
+### 1. Create Profile
 
-#### Using .NET CLI
+**POST** `/api/profiles`
 
-	cd Genderize.API dotnet run
+Creates a new profile or returns an existing one if the name already exists.
 
-The API will be available at `http://localhost:8080`
+**Request Body:**
 
-#### Using Docker
+	`{ "name": "ella" }`
 
-	docker build -t genderize-api -f Genderize.API/Dockerfile . docker run -p 8080:8080 genderize-api
+**Success Response (201 Created):**
+````````
 
-## API Documentation
+This is the code block that represents the suggested code change:
 
-### Classify Name Endpoint
+````````markdown
+	`{ "name": "ella" }`
 
-**Request**
+**Success Response (201 Created):**
 
-	`GET /api/classify?name={name}`
+	`{ "id": "1", "name": "ella", "gender": "female", "age": 28, "nationality": "american", "created_at": "2023-10-05T14:48:00Z", "updated_at": "2023-10-05T14:48:00Z" }`
 
-**Parameters**
+**Error Response (400 Bad Request):**
 
-| Parameter | Type   | Required | Description                |
-|-----------|--------|----------|----------------------------|
-| name      | string | Yes      | First name to classify     |
+	`{ "error": "Invalid input" }`
 
-**Response**
+**Notes:**
 
-	`{ "name": "John", "gender": "male", "probability": 0.99, "sampleSize": 165452, "isConfident": true, "processedAt": "2026-04-11T10:30:00Z" }`
+- If the name already exists, the existing profile is returned with a 200 OK status.
+- Gender, age, and nationality are predicted values and may vary.
+- Timestamps are in UTC ISO 8601 format.
+- Response bodies are in JSON format.
 
-**Response Fields**
+### 2. Get Profile by ID
 
-- `name`: The input name
-- `gender`: Predicted gender (male/female)
-- `probability`: Confidence score (0.0 - 1.0)
-- `sampleSize`: Number of data samples used
-- `isConfident`: Boolean indicating high confidence (typically > 0.8)
-- `processedAt`: ISO 8601 timestamp of processing
+**GET** `/api/profiles/{id}`
 
-### Health Check Endpoint
+Retrieves a profile by its unique identifier.
 
-**Request**
+**Path Parameters:**
 
-	`GET /api/health`
+- `id` - The unique identifier of the profile
 
-**Response**
+**Success Response (200 OK):**
 
-	`{ "status": "Healthy", "uptime": 12345 }`
+	`{ "id": "1", "name": "ella", "gender": "female", "age": 28, "nationality": "american", "created_at": "2023-10-05T14:48:00Z", "updated_at": "2023-10-05T14:48:00Z" }`
 
-**Response Fields**
+**Error Response (404 Not Found):**
 
-- `status`: Health status of the service
-- `uptime`: Service uptime in seconds
+	`{ "error": "Profile not found" }`
 
-Returns service health status and dependencies.
+**Notes:**
 
-### Error Responses
+- The response includes all profile fields.
+- Timestamps are in UTC ISO 8601 format.
+- Response bodies are in JSON format.
 
-The API uses standard HTTP status codes and returns structured error responses:
+### 3. List Profiles
 
-	`{ "error": "Error message", "statusCode": 400 }`
+**GET** `/api/profiles`
 
-**Common Status Codes**
+Lists all profiles, with optional filtering by gender, country, and age group.
 
-- `200 OK`: Success
-- `400 Bad Request`: Invalid name provided
-- `404 Not Found`: No prediction available
-- `500 Internal Server Error`: Server error
-- `502 Bad Gateway`: Upstream API error
+**Query Parameters:**
 
-### Custom Exceptions
+- `gender` (optional) - Filter by gender
+- `country` (optional) - Filter by country
+- `age_group` (optional) - Filter by age group (e.g., "18-25", "26-35")
 
-- `InvalidNameException`: Thrown when name validation fails
-- `NoPredictionException`: Thrown when no gender prediction is available
-- `UpstreamApiException`: Thrown when external API fails
+**Success Response (200 OK):**
 
-## Configuration
+	[
+	  { "id": "1", "name": "ella", "gender": "female", "age": 28, "nationality": "american", "created_at": "2023-10-05T14:48:00Z", "updated_at": "2023-10-05T14:48:00Z" },
+	  { "id": "2", "name": "john", "gender": "male", "age": 34, "nationality": "canadian", "created_at": "2023-10-06T10:20:00Z", "updated_at": "2023-10-06T10:20:00Z" }
+	]
 
-### Application Settings
+**Notes:**
 
-Configuration is managed through `appsettings.json` and `appsettings.Production.json`:
+- Filtering parameters are optional; multiple values can be comma-separated.
+- The response includes all matching profiles.
+- Timestamps are in UTC ISO 8601 format.
+- Response bodies are in JSON format.
 
-	`{ "ExternalApi": { "BaseUrl": "https://api.genderize.io" }, "HealthChecks": { "Enabled": true }, "Logging": { "LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" } } }`
+### 4. Delete Profile
 
-### Environment Variables
+**DELETE** `/api/profiles/{id}`
 
-For production deployment, configure:
+Deletes a profile by its unique identifier.
 
-- `ASPNETCORE_ENVIRONMENT`: Set to `Production`
-- `ASPNETCORE_URLS`: HTTP listening URLs
+**Path Parameters:**
 
-## Deployment
+- `id` - The unique identifier of the profile
 
-### AWS ECS Deployment
-	
-The project includes automated CI/CD using GitHub Actions:
+**Success Response (204 No Content):**
 
-**Workflow Triggers**
-- Push to `main` or `develop` branches
-- Pull requests to `main`
-- Manual workflow dispatch
+- Indicates that the profile was successfully deleted.
 
-**Deployment Process**
+**Error Response (404 Not Found):**
 
-1. Build and test .NET application
-2. Validate Docker image
-3. Push to Amazon ECR (main branch only)
-4. Update ECS task definition
-5. Deploy to ECS cluster with service stability checks
+	`{ "error": "Profile not found" }`
 
-**AWS Resources**
+**Notes:**
 
-- **Region**: `eu-north-1`
-- **ECR Repository**: `genderize`
-- **ECS Cluster**: `genderize-cluster`
-- **ECS Service**: `genderize-service`
-- **Compute**: AWS Fargate (256 CPU, 512 MB Memory)
+- A soft delete marks the profile as deleted without removing it from the database.
+- Hard delete removes the profile permanently.
+- Response bodies are in JSON format.
 
-### Required GitHub Secrets
+## ?? Getting Started
 
-Configure these secrets in your GitHub repository:
+To run this project locally:
 
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
+1. Clone the repository
+2. Run `docker-compose up` to start the services
+3. Configure your environment variables in the `.env` file
+4. Access the API at `http://localhost:5261`
 
-### Manual Deployment
+## ?? Configuration
 
-## Technologies
+Key configuration settings:
 
-### Core Technologies
+- `ASPNETCORE_ENVIRONMENT` - Set to `Development` or `Production`
+- `ConnectionStrings:DefaultConnection` - SQL Server connection string
 
-- **.NET 9**: Latest .NET framework
-- **C# 13**: Modern C# language features
-- **ASP.NET Core**: Web API framework
+## ?? Deployment
 
-### Libraries & Frameworks
+This application is containerized using Docker and deployed on AWS ECS.
 
-- **MediatR**: CQRS and mediator pattern implementation
-- **Docker**: Containerization
+### AWS ECS Setup
 
-### Cloud & DevOps
+1. Create an ECS cluster
+2. Define a task definition with the appropriate CPU, memory, and network settings
+3. Create a service based on the task definition
+4. Configure scaling policies and load balancer settings as needed
 
-- **AWS ECS**: Container orchestration
-- **AWS Fargate**: Serverless compute for containers
-- **AWS ECR**: Container registry
-- **GitHub Actions**: CI/CD automation
-- **CloudWatch**: Logging and monitoring
+### CI/CD Pipeline
 
-### External APIs
+- The project includes a GitHub Actions workflow for automated building and deployment.
+- Customize the `deploy.yml` file for your deployment preferences.
 
-- **Genderize.io API**: Gender prediction service
+## ??? Project Structure
 
-## Contributing
+- `/src` - Source code of the API
+- `/tests` - Unit and integration tests
+- `/docs` - Documentation files
+- `/deploy` - Deployment scripts and configs
 
-Contributions are welcome! Please follow these guidelines:
+## ?? External APIs
+
+Fourteen integrates with the following external APIs:
+
+- **Genderize** `(https://api.genderize.io)` - For gender prediction
+- **Agify** `(https://api.agify.io)` - For age prediction
+- **Nationalize** `(https://api.nationalize.io)` - For nationality prediction
+
+## ?? Classification Logic
+
+The classification logic for age groups is as follows:
+
+- `0-17` years: "child"
+- `18-24` years: "young_adult"
+- `25-34` years: "adult"
+- `35-64` years: "middle_aged"
+- `65+` years: "senior"
+
+These categories are used for better understanding demographic distributions.
+
+## ?? Error Handling
+
+- The API uses standard HTTP status codes to indicate the success or failure of requests.
+- Client-side errors (4xx) represent validation issues or resource not found.
+- Server-side errors (5xx) indicate processing failures.
+- Specific error messages are returned in the response body for 400 and 500 errors.
+
+## ?? Known Limitations
+
+- The accuracy of demographic predictions depends on the external APIs and the quality of the input data.
+- Name-based predictions may not always align with actual gender, age, or nationality.
+- Free tier limits of the external APIs may restrict the number of requests.
+
+## ?? Contributing
+
+Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-Please ensure:
-- Code follows existing architecture patterns
-- All tests pass
-- New features include appropriate tests
-- Documentation is updated
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Author
-
-**DimTony**
-
-- GitHub: [@DimTony](https://github.com/DimTony)
-
-## Acknowledgments
-
-- Built with Clean Architecture principles by Robert C. Martin
-- Uses the [Genderize.io API](https://genderize.io)
-- Deployed on AWS infrastructure
+2. Create a new branch for your feature or bug fix
+3. Make your changes and commit them
+4. Push to your forked repository
+5. Create a pull request describing your changes
 
