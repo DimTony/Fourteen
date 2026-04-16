@@ -1,0 +1,6 @@
+@Fourteen.API_HostAddress = http://localhost:5261
+
+GET {{Fourteen.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
