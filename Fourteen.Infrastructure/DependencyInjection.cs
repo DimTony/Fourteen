@@ -65,7 +65,7 @@ namespace Fourteen.Infrastructure;
 
             services.AddHttpClient("genderize", c =>
             {
-                var baseUrl = configuration["ExternalApi:BaseUrl"]
+                var baseUrl = configuration["ExternalApi:GenderizeUrl"]
                     ?? "https://api.genderize.io";
 
                 c.BaseAddress = new Uri(baseUrl);
@@ -73,14 +73,14 @@ namespace Fourteen.Infrastructure;
 
             services.AddHttpClient("agify", c =>
             {
-                var baseUrl = configuration["ExternalApi:BaseUrl"]
+                var baseUrl = configuration["ExternalApi:AgifyUrl"]
                     ?? "https://api.agify.io";
                 c.BaseAddress = new Uri(baseUrl);
             });
 
             services.AddHttpClient("nationalize", c =>
             {
-                var baseUrl = configuration["ExternalApi:BaseUrl"]
+                var baseUrl = configuration["ExternalApi:NationalizeUrl"]
                     ?? "https://api.nationalize.io";
 
                 c.BaseAddress = new Uri(baseUrl);

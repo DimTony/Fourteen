@@ -17,8 +17,16 @@
       "essential": true,
       "environment": [
         {
-          "name": "ExternalApi__BaseUrl",
+          "name": "ExternalApi__GenderizeUrl",
           "value": "https://api.genderize.io"
+        },
+        {
+          "name": "ExternalApi__AgifyUrl",
+          "value": "https://api.agify.io"
+        },
+        {
+          "name": "ExternalApi__NationalizeUrl",
+          "value": "https://api.nationalize.io"
         },
         {
           "name": "ASPNETCORE_ENVIRONMENT",
