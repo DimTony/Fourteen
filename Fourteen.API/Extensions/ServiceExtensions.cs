@@ -35,7 +35,7 @@ namespace Fourteen.API.Extensions
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "Genderize API",
+                    Title = "Fourteen API",
                     Version = "v1",
                     Description = "External Integration API",
                 });

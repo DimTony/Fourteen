@@ -12,7 +12,7 @@ namespace Fourteen.API.Extensions
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Genderize API v1");
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Fourteen API v1");
                     options.RoutePrefix = "swagger";
                 });
             }
