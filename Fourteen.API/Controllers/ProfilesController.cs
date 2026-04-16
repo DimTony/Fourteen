@@ -13,9 +13,13 @@ namespace Fourteen.API.Controllers
     public class ProfilesController : ControllerBase
     {
         private readonly IMediator mediator;
+        private readonly ILogger<ProfilesController> _logger;
 
-        public ProfilesController(IMediator mediator)
-            => this.mediator = mediator;
+        public ProfilesController(IMediator mediator, ILogger<ProfilesController> logger)
+        {
+            this.mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost]
         [ProducesResponseType(typeof(CreateProfileSuccessResponse), StatusCodes.Status200OK)]
@@ -29,8 +33,11 @@ namespace Fourteen.API.Controllers
             [FromBody] CreateProfileRequest request,
             CancellationToken ct)
         {
+            _logger.LogInformation("CreateProfile endpoint called with Name: {Name}", request.Name);
+
             if (request.Name is null || string.IsNullOrWhiteSpace(request.Name))
             {
+                _logger.LogWarning("CreateProfile failed: Missing or empty name");
                 return BadRequest(new ApiErrorResponse
                 {
                     Status = "error",
@@ -38,10 +45,12 @@ namespace Fourteen.API.Controllers
                 });
             }
 
+            _logger.LogInformation("Sending CreateProfileCommand to MediatR");
             var result = await this.mediator.Send(new CreateProfileCommand(request.Name), ct);
 
             if (result.IsFailure)
             {
+                _logger.LogError("CreateProfile failed with error: {Error}", result.Error);
                 return BadRequest(new ApiErrorResponse
                 {
                     Status = "error",
@@ -51,6 +60,9 @@ namespace Fourteen.API.Controllers
 
             var profileResult = result.Value;
             var profile = profileResult.Profile;
+
+            _logger.LogInformation("Profile created successfully: Id={Id}, IsNew={IsNew}",
+                profile.Id.Value, profileResult.IsNewProfile);
 
             var response = new CreateProfileSuccessResponse
             {
@@ -88,17 +100,21 @@ namespace Fourteen.API.Controllers
                 [FromRoute] Guid id,
                 CancellationToken ct)
         {
+            _logger.LogInformation("GetSingleProfile endpoint called with Id: {Id}", id);
 
             var result = await this.mediator.Send(new GetProfileByIdQuery(id), ct);
 
             if (result.IsFailure)
             {
+                _logger.LogWarning("GetSingleProfile failed: {Error}", result.Error);
                 return NotFound(new ApiErrorResponse
                 {
                     Status = "error",
                     Message = result.Error
                 });
             }
+
+            _logger.LogInformation("Profile retrieved successfully: Id={Id}", id);
 
             var profile = result.Value;
 
