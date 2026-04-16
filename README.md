@@ -1,4 +1,4 @@
-# Fourteen - Profile Classification API
+﻿# Fourteen - Profile Classification API
 
 A RESTful API service built with .NET 9 that aggregates data from multiple external APIs to create, manage, and classify user profiles based on name, gender, age, and nationality predictions.
 
@@ -59,6 +59,17 @@ Fourteen is a profile classification system that accepts a name, calls three fre
 - **Factory Pattern** - Profile creation
 - **Feature Flag Pattern** - Runtime feature toggling
 
+## Architecture
+
+Fourteen is built on Domain-Driven Design (DDD) with a CQRS pattern enforced through MediatR. The solution is structured into distinct layers:
+
+- **API Layer** (`Fourteen.API`) - Controllers, middleware, and HTTP concerns
+- **Application Layer** (`Fourteen.Application`) - Commands, queries, handlers, and pipeline behaviors
+- **Domain Layer** (`Fourteen.Domain`) - Entities, value objects, domain events, and business rules
+- **Infrastructure Layer** (`Fourteen.Infrastructure`) - EF Core repositories, external API clients, and persistence
+
+Requests flow from controllers → MediatR pipeline (feature flag validation, logging) → command/query handlers → domain logic → repositories. External API calls are isolated in the infrastructure layer and results are mapped to domain value objects before being persisted.
+
 ## Features
 
 ### Core Features
@@ -91,15 +102,29 @@ Creates a new profile or returns an existing one if the name already exists.
 
 **Request Body:**
 
-	`{ "name": "ella" }`
+```json
+{ "name": "ella" }
+```
 
 **Success Response (201 Created):**
 
-	`{ "id": "1", "name": "ella", "gender": "female", "age": 28, "nationality": "american", "created_at": "2023-10-05T14:48:00Z", "updated_at": "2023-10-05T14:48:00Z" }`
+```json
+{
+  "id": "1",
+  "name": "ella",
+  "gender": "female",
+  "age": 28,
+  "nationality": "american",
+  "created_at": "2023-10-05T14:48:00Z",
+  "updated_at": "2023-10-05T14:48:00Z"
+}
+```
 
 **Error Response (400 Bad Request):**
 
-	`{ "error": "Invalid input" }`
+```json
+{ "error": "Invalid input" }
+```
 
 **Notes:**
 
@@ -120,11 +145,23 @@ Retrieves a profile by its unique identifier.
 
 **Success Response (200 OK):**
 
-	`{ "id": "1", "name": "ella", "gender": "female", "age": 28, "nationality": "american", "created_at": "2023-10-05T14:48:00Z", "updated_at": "2023-10-05T14:48:00Z" }`
+```json
+{
+  "id": "1",
+  "name": "ella",
+  "gender": "female",
+  "age": 28,
+  "nationality": "american",
+  "created_at": "2023-10-05T14:48:00Z",
+  "updated_at": "2023-10-05T14:48:00Z"
+}
+```
 
 **Error Response (404 Not Found):**
 
-	`{ "error": "Profile not found" }`
+```json
+{ "error": "Profile not found" }
+```
 
 **Notes:**
 
@@ -142,14 +179,32 @@ Lists all profiles, with optional filtering by gender, country, and age group.
 
 - `gender` (optional) - Filter by gender
 - `country` (optional) - Filter by country
-- `age_group` (optional) - Filter by age group (e.g., "18-25", "26-35")
+- `age_group` (optional) - Filter by age group (e.g., `18-25`, `26-35`)
 
 **Success Response (200 OK):**
 
-	[
-	  { "id": "1", "name": "ella", "gender": "female", "age": 28, "nationality": "american", "created_at": "2023-10-05T14:48:00Z", "updated_at": "2023-10-05T14:48:00Z" },
-	  { "id": "2", "name": "john", "gender": "male", "age": 34, "nationality": "canadian", "created_at": "2023-10-06T10:20:00Z", "updated_at": "2023-10-06T10:20:00Z" }
-	]
+```json
+[
+  {
+    "id": "1",
+    "name": "ella",
+    "gender": "female",
+    "age": 28,
+    "nationality": "american",
+    "created_at": "2023-10-05T14:48:00Z",
+    "updated_at": "2023-10-05T14:48:00Z"
+  },
+  {
+    "id": "2",
+    "name": "john",
+    "gender": "male",
+    "age": 34,
+    "nationality": "canadian",
+    "created_at": "2023-10-06T10:20:00Z",
+    "updated_at": "2023-10-06T10:20:00Z"
+  }
+]
+```
 
 **Notes:**
 
@@ -174,7 +229,9 @@ Deletes a profile by its unique identifier.
 
 **Error Response (404 Not Found):**
 
-	`{ "error": "Profile not found" }`
+```json
+{ "error": "Profile not found" }
+```
 
 **Notes:**
 
@@ -218,23 +275,36 @@ This application is containerized using Docker and deployed on AWS ECS.
 - The project includes a GitHub Actions workflow for automated building and deployment.
 - Customize the `aws-ecs-deploy.yml` file for your deployment preferences.
 
+## Project Structure
+
+```
+Fourteen/
+├── Fourteen.API/               # Controllers, middleware, program entry point
+├── Fourteen.Application/       # CQRS commands, queries, handlers, pipeline behaviors
+├── Fourteen.Domain/            # Entities, value objects, domain events, business rules
+├── Fourteen.Infrastructure/    # EF Core, repositories, external API clients
+└── Fourteen.sln
+```
+
 ## External APIs
 
 Fourteen integrates with the following external APIs:
 
-- **Genderize** `(https://api.genderize.io)` - For gender prediction
-- **Agify** `(https://api.agify.io)` - For age prediction
-- **Nationalize** `(https://api.nationalize.io)` - For nationality prediction
+- **Genderize** (`https://api.genderize.io`) - For gender prediction
+- **Agify** (`https://api.agify.io`) - For age prediction
+- **Nationalize** (`https://api.nationalize.io`) - For nationality prediction
 
 ## Classification Logic
 
 The classification logic for age groups is as follows:
 
-- `0-17` years: "child"
-- `18-24` years: "young_adult"
-- `25-34` years: "adult"
-- `35-64` years: "middle_aged"
-- `65+` years: "senior"
+| Age Range | Classification  |
+|-----------|-----------------|
+| 0–17      | `child`         |
+| 18–24     | `young_adult`   |
+| 25–34     | `adult`         |
+| 35–64     | `middle_aged`   |
+| 65+       | `senior`        |
 
 These categories are used for better understanding demographic distributions.
 
@@ -260,4 +330,3 @@ Contributions are welcome! Please follow these steps:
 3. Make your changes and commit them
 4. Push to your forked repository
 5. Create a pull request describing your changes
-
