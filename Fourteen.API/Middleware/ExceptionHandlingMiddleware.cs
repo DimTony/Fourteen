@@ -37,8 +37,7 @@ namespace Fourteen.API.Middleware
             {
                 var status = ex.StatusCode is 502 or null ? 502 : 500;
                 _logger.LogError(ex, "Upstream failure");
-                await WriteError(ctx, 502, "Upstream or server failure");
-
+                await WriteError(ctx, status, ex.Message);
             }
             catch (Exception ex)
             {
