@@ -27,6 +27,26 @@
         {
           "name": "ASPNETCORE_URLS",
           "value": "http://+:8080"
+        },
+        {
+          "name": "Features__CreateProfile",
+          "value": "true"
+        },
+        {
+          "name": "Features__GetProfileById",
+          "value": "true"
+        },
+        {
+          "name": "Features__GetAllProfiles",
+          "value": "true"
+        },
+        {
+          "name": "Features__DeleteProfile",
+          "value": "true"
+        },
+        {
+          "name": "Features__ClassifyName",
+          "value": "true"
         }
       ],
       "secrets": [
