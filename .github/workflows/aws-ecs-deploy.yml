@@ -40,7 +40,7 @@ jobs:
       
       - name: Build Docker image (validation)
         run: |
-          docker build -t genderize-api:${{ github.sha }} -f Genderize.API/Dockerfile .
+          docker build -t genderize-api:${{ github.sha }} -f Fourteen.API/Dockerfile .
           echo "Docker image built successfully"
 
   deploy-to-ecs:
