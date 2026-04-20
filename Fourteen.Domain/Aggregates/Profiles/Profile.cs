@@ -12,10 +12,11 @@ namespace Fourteen.Domain.Aggregates.Profiles
         public string Name { get; private set; } = default!;
         public string Gender { get; private set; } = default!;
         public double GenderProbability { get; private set; } = default!;
-        public int SampleSize { get; private set; } = default!;
+        // public int SampleSize { get; private set; } = default!;
         public int Age { get; private set; } = default!;
         public string AgeGroup { get; private set; } = default!;
         public string CountryId { get; private set; } = default!;
+        public string CountryName { get; private set; } = default!;
         public double CountryProbability { get; private set; } = default!;
         public DateTime CreatedAt { get; private set; }
 
@@ -25,9 +26,11 @@ namespace Fourteen.Domain.Aggregates.Profiles
             string name,
             string gender,
             double genderProbability,
-            int sampleSize,
+            // int sampleSize,
             int age,
+            string ageGroup,
             string countryId,
+            string countryName,
             double countryProbability)
         {
             return new Profile
@@ -36,10 +39,11 @@ namespace Fourteen.Domain.Aggregates.Profiles
                 Name = name,
                 Gender = gender,
                 GenderProbability = genderProbability,
-                SampleSize = sampleSize,
+                // SampleSize = sampleSize,
                 Age = age,
-                AgeGroup = AgeGroupClassifier.Classify(age),
+                AgeGroup = ageGroup ?? AgeGroupClassifier.Classify(age),
                 CountryId = countryId,
+                CountryName = countryName,
                 CountryProbability = countryProbability,
                 CreatedAt = DateTime.UtcNow
             };

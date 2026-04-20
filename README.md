@@ -1,6 +1,6 @@
-﻿# Fourteen - Profile Classification API
+﻿# Fourteen - Profile Search API
 
-A RESTful API service built with .NET 9 that aggregates data from multiple external APIs to create, manage, and classify user profiles based on name, gender, age, and nationality predictions.
+A RESTful API service built with .NET 9 for querying and searching stored user profiles by demographic attributes.
 
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/download)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -16,39 +16,28 @@ A RESTful API service built with .NET 9 that aggregates data from multiple exter
 - [Configuration](#configuration)
 - [Deployment](#deployment)
 - [Project Structure](#project-structure)
-- [External APIs](#external-apis)
-- [Classification Logic](#classification-logic)
+- [Natural Language Query Parser](#natural-language-query-parser)
 - [Error Handling](#error-handling)
 - [Known Limitations](#known-limitations)
 - [Contributing](#contributing)
 
 ## Overview
 
-Fourteen is a profile classification system that accepts a name, calls three free external APIs (Genderize, Agify, Nationalize), applies classification logic, stores the result in a SQL Server database, and exposes RESTful endpoints to manage that data.
+Fourteen is a profile search API that exposes read endpoints for querying stored user profiles. Profiles contain demographic data (gender, age, nationality) and can be retrieved via structured filters or a natural language query string.
 
 ### What It Does
 
-1. **Accepts a name** via API endpoint
-2. **Calls three external APIs** to gather demographic predictions:
-   - **Genderize** - Predicts gender based on name
-   - **Agify** - Predicts age based on name
-   - **Nationalize** - Predicts nationality based on name
-3. **Applies classification logic** to categorize age groups
-4. **Stores profiles** in a SQL Server database (duplicate prevention)
-5. **Exposes CRUD endpoints** for profile management with filtering capabilities
+1. **Lists profiles** with optional structured filters (gender, age group, country, probability thresholds, sorting, and pagination)
+2. **Searches profiles** using a free-text natural language query that is parsed into structured filters automatically
 
 ### Key Highlights
 
 - **Domain-Driven Design (DDD)** architecture
 - **CQRS pattern** with MediatR
-- **Feature flag system** for endpoint control
-- **UUID v7** for ID generation
-- **Duplicate prevention** based on name (case-insensitive)
-- **Comprehensive error handling** with 502 responses for invalid external API data
+- **UUID v7** for profile IDs
 - **CORS enabled** for cross-origin requests
 - **Docker support** for containerization
 - **AWS ECS deployment** with CI/CD pipeline
-- **Health check endpoint**
 
 ### Design Patterns Used
 
@@ -56,37 +45,30 @@ Fourteen is a profile classification system that accepts a name, calls three fre
 - **Mediator Pattern** - Decoupled request handling via MediatR
 - **Repository Pattern** - Data access abstraction
 - **Result Pattern** - Functional error handling without exceptions
-- **Factory Pattern** - Profile creation
-- **Feature Flag Pattern** - Runtime feature toggling
 
 ## Architecture
 
 Fourteen is built on Domain-Driven Design (DDD) with a CQRS pattern enforced through MediatR. The solution is structured into distinct layers:
 
 - **API Layer** (`Fourteen.API`) - Controllers, middleware, and HTTP concerns
-- **Application Layer** (`Fourteen.Application`) - Commands, queries, handlers, and pipeline behaviors
-- **Domain Layer** (`Fourteen.Domain`) - Entities, value objects, domain events, and business rules
-- **Infrastructure Layer** (`Fourteen.Infrastructure`) - EF Core repositories, external API clients, and persistence
+- **Application Layer** (`Fourteen.Application`) - Queries, handlers, and pipeline behaviors
+- **Domain Layer** (`Fourteen.Domain`) - Entities, value objects, and business rules
+- **Infrastructure Layer** (`Fourteen.Infrastructure`) - EF Core repositories and persistence
 
-Requests flow from controllers → MediatR pipeline (feature flag validation, logging) → command/query handlers → domain logic → repositories. External API calls are isolated in the infrastructure layer and results are mapped to domain value objects before being persisted.
+Requests flow from controllers → MediatR pipeline → query handlers → repositories.
 
 ## Features
 
 ### Core Features
 
-- **Profile Creation** with external API integration
-- **Profile Retrieval** by ID
-- **Profile Listing** with optional filters (gender, country, age group)
-- **Profile Deletion** with soft/hard delete support
-- **Duplicate Detection** - prevents creating duplicate profiles for the same name
+- **Profile Listing** with optional filters (gender, country, age group, age range, probability thresholds)
+- **Natural Language Search** - query profiles using free-text descriptions
 - **Case-Insensitive Filtering** - query parameters are normalized
 
 ### Technical Features
 
-- **Feature Flags** - Enable/disable endpoints via configuration
-- **Pipeline Behaviors** - Cross-cutting concerns (feature flag validation)
+- **Pipeline Behaviors** - Cross-cutting concerns (logging)
 - **Structured Logging** - Ready for integration (Serilog-compatible)
-- **Health Checks** - `/api/health` endpoint
 - **CORS Support** - `Access-Control-Allow-Origin: *`
 - **UTC Timestamps** - ISO 8601 format
 
@@ -94,150 +76,95 @@ Requests flow from controllers → MediatR pipeline (feature flag validation, lo
 
 Base URL: `https://your-domain.com` (or `http://localhost:5261` for local)
 
-### 1. Create Profile
-
-**POST** `/api/profiles`
-
-Creates a new profile or returns an existing one if the name already exists.
-
-**Request Body:**
-
-```json
-{ "name": "ella" }
-```
-
-**Success Response (201 Created):**
-
-```json
-{
-  "id": "1",
-  "name": "ella",
-  "gender": "female",
-  "age": 28,
-  "nationality": "american",
-  "created_at": "2023-10-05T14:48:00Z",
-  "updated_at": "2023-10-05T14:48:00Z"
-}
-```
-
-**Error Response (400 Bad Request):**
-
-```json
-{ "error": "Invalid input" }
-```
-
-**Notes:**
-
-- If the name already exists, the existing profile is returned with a 200 OK status.
-- Gender, age, and nationality are predicted values and may vary.
-- Timestamps are in UTC ISO 8601 format.
-- Response bodies are in JSON format.
-
-### 2. Get Profile by ID
-
-**GET** `/api/profiles/{id}`
-
-Retrieves a profile by its unique identifier.
-
-**Path Parameters:**
-
-- `id` - The unique identifier of the profile
-
-**Success Response (200 OK):**
-
-```json
-{
-  "id": "1",
-  "name": "ella",
-  "gender": "female",
-  "age": 28,
-  "nationality": "american",
-  "created_at": "2023-10-05T14:48:00Z",
-  "updated_at": "2023-10-05T14:48:00Z"
-}
-```
-
-**Error Response (404 Not Found):**
-
-```json
-{ "error": "Profile not found" }
-```
-
-**Notes:**
-
-- The response includes all profile fields.
-- Timestamps are in UTC ISO 8601 format.
-- Response bodies are in JSON format.
-
-### 3. List Profiles
+### 1. List Profiles
 
 **GET** `/api/profiles`
 
-Lists all profiles, with optional filtering by gender, country, and age group.
+Lists all profiles with optional structured filtering, sorting, and pagination.
 
 **Query Parameters:**
 
-- `gender` (optional) - Filter by gender
-- `country` (optional) - Filter by country
-- `age_group` (optional) - Filter by age group (e.g., `18-25`, `26-35`)
+| Parameter                 | Type   | Description                                                                      |
+| ------------------------- | ------ | -------------------------------------------------------------------------------- |
+| `gender`                  | string | Filter by gender: `male` or `female`                                             |
+| `age_group`               | string | Filter by age group: `child`, `teenager`, `adult`, or `senior`                   |
+| `country_id`              | string | Filter by ISO 3166-1 alpha-2 country code (e.g., `US`, `FR`)                     |
+| `min_age`                 | int    | Minimum age (inclusive)                                                          |
+| `max_age`                 | int    | Maximum age (inclusive)                                                          |
+| `min_gender_probability`  | float  | Minimum gender prediction confidence (0.0–1.0)                                   |
+| `min_country_probability` | float  | Minimum country prediction confidence (0.0–1.0)                                  |
+| `sort_by`                 | string | Sort field: `age`, `created_at`, or `gender_probability` (default: `created_at`) |
+| `order`                   | string | Sort direction: `asc` or `desc` (default: `asc`)                                 |
+| `page`                    | int    | Page number (default: `1`)                                                       |
+| `limit`                   | int    | Page size, max `50` (default: `10`)                                              |
 
 **Success Response (200 OK):**
 
 ```json
-[
-  {
-    "id": "1",
-    "name": "ella",
-    "gender": "female",
-    "age": 28,
-    "nationality": "american",
-    "created_at": "2023-10-05T14:48:00Z",
-    "updated_at": "2023-10-05T14:48:00Z"
-  },
-  {
-    "id": "2",
-    "name": "john",
-    "gender": "male",
-    "age": 34,
-    "nationality": "canadian",
-    "created_at": "2023-10-06T10:20:00Z",
-    "updated_at": "2023-10-06T10:20:00Z"
-  }
-]
+{
+  "status": "success",
+  "page": 1,
+  "limit": 10,
+  "total": 2,
+  "data": [
+    {
+      "id": "01957f3a-...",
+      "name": "ella",
+      "gender": "female",
+      "gender_probability": 0.97,
+      "age": 28,
+      "age_group": "adult",
+      "country_id": "US",
+      "country_name": "United States",
+      "country_probability": 0.12,
+      "created_at": "2026-04-20T14:48:00Z"
+    }
+  ]
+}
 ```
 
 **Notes:**
 
-- Filtering parameters are optional; multiple values can be comma-separated.
-- The response includes all matching profiles.
-- Timestamps are in UTC ISO 8601 format.
-- Response bodies are in JSON format.
+- All parameters are optional; omitting them returns all profiles.
+- Returns 400 if any parameter value is invalid.
 
-### 4. Delete Profile
+### 2. Natural Language Search
 
-**DELETE** `/api/profiles/{id}`
+**GET** `/api/profiles/Search`
 
-Deletes a profile by its unique identifier.
+Searches profiles using a free-text natural language query instead of structured parameters. The query is parsed into filters and applied against the profile store.
 
-**Path Parameters:**
+**Query Parameters:**
 
-- `id` - The unique identifier of the profile
+| Parameter | Type   | Description                              |
+| --------- | ------ | ---------------------------------------- |
+| `q`       | string | Natural language search query (required) |
+| `page`    | int    | Page number (default: `1`)               |
+| `limit`   | int    | Page size, max `50` (default: `10`)      |
 
-**Success Response (204 No Content):**
+**Example Requests:**
 
-- Indicates that the profile was successfully deleted.
+```
+GET /api/profiles/Search?q=female+above+30+from+nigeria
+GET /api/profiles/Search?q=young+male+from+germany
+GET /api/profiles/Search?q=elderly+female+from+japan
+GET /api/profiles/Search?q=teenager+from+brazil
+```
 
-**Error Response (404 Not Found):**
+**Success Response (200 OK):** Same shape as the List Profiles response.
+
+**Error Response (422 Unprocessable Entity):**
 
 ```json
-{ "error": "Profile not found" }
+{ "status": "error", "message": "Unable to interpret query" }
 ```
+
+Returned when no recognized keywords are found in the query.
 
 **Notes:**
 
-- A soft delete marks the profile as deleted without removing it from the database.
-- Hard delete removes the profile permanently.
-- Response bodies are in JSON format.
+- Results always sort by `created_at` ascending; use the structured endpoint for custom sorting.
+- See [Natural Language Query Parser](#natural-language-query-parser) for the full keyword reference.
 
 ## Getting Started
 
@@ -254,9 +181,6 @@ Key configuration settings:
 
 - `ASPNETCORE_ENVIRONMENT` - Set to `Development` or `Production`
 - `ConnectionStrings:DefaultConnection` - SQL Server connection string
-- `ExternalApi__GenderizeUrl` - Base URL for Genderize API (e.g., `https://api.genderize.io`)
-- `ExternalApi__AgifyUrl` - Base URL for Agify API (e.g., `https://api.agify.io`)
-- `ExternalApi__NationalizeUrl` - Base URL for Nationalize API (e.g., `https://api.nationalize.io`)
 - `ASPNETCORE_URLS` - URL bindings for the API (e.g., `http://+:8080`)
 
 ## Deployment
@@ -280,33 +204,92 @@ This application is containerized using Docker and deployed on AWS ECS.
 ```
 Fourteen/
 ├── Fourteen.API/               # Controllers, middleware, program entry point
-├── Fourteen.Application/       # CQRS commands, queries, handlers, pipeline behaviors
-├── Fourteen.Domain/            # Entities, value objects, domain events, business rules
-├── Fourteen.Infrastructure/    # EF Core, repositories, external API clients
+├── Fourteen.Application/       # CQRS queries, handlers, and pipeline behaviors
+├── Fourteen.Domain/            # Entities, value objects, and business rules
+├── Fourteen.Infrastructure/    # EF Core and repositories
 └── Fourteen.sln
 ```
 
-## External APIs
+## Natural Language Query Parser
 
-Fourteen integrates with the following external APIs:
+`NaturalLanguageQueryParser` converts a plain-text query string into a `GetProfilesQuery` by applying a fixed set of regex and substring rules. It is used exclusively by the `GET /api/profiles/Search` endpoint.
 
-- **Genderize** (`https://api.genderize.io`) - For gender prediction
-- **Agify** (`https://api.agify.io`) - For age prediction
-- **Nationalize** (`https://api.nationalize.io`) - For nationality prediction
+### How It Works
 
-## Classification Logic
+1. The input is lowercased.
+2. Each rule runs independently against the lowercased string (rules do not short-circuit each other except where noted below).
+3. If no filter is extracted at all, the parser returns a failure and the endpoint responds with `422`.
+4. All extracted filters are combined with AND logic — there is no OR support.
 
-The classification logic for age groups is as follows:
+### Supported Keywords and Filter Mappings
 
-| Age Range | Classification  |
-|-----------|-----------------|
-| 0–17      | `child`         |
-| 18–24     | `young_adult`   |
-| 25–34     | `adult`         |
-| 35–64     | `middle_aged`   |
-| 65+       | `senior`        |
+#### Gender
 
-These categories are used for better understanding demographic distributions.
+Uses word-boundary regex (`\bmale\b`, `\bfemale\b`) to avoid false matches inside longer words.
+
+| Keyword  | Maps to             |
+| -------- | ------------------- |
+| `male`   | `gender = "male"`   |
+| `female` | `gender = "female"` |
+
+#### Age Group
+
+Matched by substring in priority order (first match wins; remaining keywords are ignored).
+
+| Keyword(s)          | Maps to                  |
+| ------------------- | ------------------------ |
+| `teenager`, `teen`  | `age_group = "teenager"` |
+| `adult`             | `age_group = "adult"`    |
+| `senior`, `elderly` | `age_group = "senior"`   |
+| `child`, `children` | `age_group = "child"`    |
+
+Note: `young` is **not** an age-group keyword — it maps to a raw age range instead (see below).
+
+#### Raw Age Range
+
+These set `min_age` / `max_age` directly and do not set `age_group`.
+
+| Keyword pattern                        | Effect                         |
+| -------------------------------------- | ------------------------------ |
+| `young`                                | `min_age = 16`, `max_age = 24` |
+| `above N`, `over N`, `older than N`    | `min_age = N`                  |
+| `below N`, `under N`, `younger than N` | `max_age = N`                  |
+
+`above`/`over`/`older than` and `below`/`under`/`younger than` run after `young`, so they override the `min_age` or `max_age` value set by `young` when both appear in the same query.
+
+#### Country
+
+Substring-matched against a dictionary of ~195 full English country names that map to ISO 3166-1 alpha-2 codes. The first match found during dictionary iteration is used.
+
+Examples:
+
+| Query phrase    | Resolved `country_id` |
+| --------------- | --------------------- |
+| `nigeria`       | `NG`                  |
+| `united states` | `US`                  |
+| `south korea`   | `KR`                  |
+| `germany`       | `DE`                  |
+
+### Parser Limitations and Unhandled Edge Cases
+
+#### What the Parser Does Not Handle
+
+- **Demonyms** — adjective forms like `american`, `french`, `german`, `japanese` are not recognized. Only full English country names (e.g., `united states`, `france`, `germany`, `japan`) work.
+- **ISO country codes** — two-letter codes such as `US` or `FR` in the query string are not matched; only full names are.
+- **Multiple countries** — only the first country name found is used; subsequent ones are silently ignored.
+- **OR conditions** — there is no syntax for expressing OR between filters. All extracted values are ANDed.
+- **Custom sorting / ordering** — the search endpoint always sorts by `created_at` ascending. Use the structured `GET /api/profiles` endpoint for sort control.
+- **Negation** — phrases like `not male` or `excluding germany` are not parsed; the negated term will be matched as if the negation were absent.
+- **Probability filters** — `min_gender_probability` and `min_country_probability` cannot be expressed in natural language.
+
+#### Unhandled Edge Cases
+
+- **`young adult`** — matches both `adult` (age-group rule) and `young` (age-range rule), resulting in `age_group = "adult"` **and** `min_age = 16, max_age = 24` simultaneously. The two constraints are ANDed, which may return fewer results than expected.
+- **Conflicting gender keywords** — if both `male` and `female` appear in the query (e.g., `"male or female"`), neither is extracted and `gender` remains `null` with no error.
+- **`young` with an explicit bound** — e.g., `"young above 20"` first sets `min_age = 16, max_age = 24`, then `above 20` overrides `min_age` to `20`. The final range is `20–24`, which may not match the user's intent.
+- **Ambiguous country substrings** — because matching uses `string.Contains`, shorter country names that are substrings of longer ones can shadow the longer name. For example, `"niger"` is a substring of `"nigeria"`, so a query containing `"nigeria"` may resolve to `NE` (Niger) or `NG` (Nigeria) depending on dictionary iteration order, which is not guaranteed to be stable.
+- **`"chad"` as a given name** — the word `chad` matches the country Chad (code `TD`). A query like `"chad is male"` would incorrectly apply a country filter.
+- **No feedback on partial parse** — if a query contains some recognizable and some unrecognizable terms, only the recognized terms produce filters. Unrecognized parts are silently dropped with no warning in the response.
 
 ## Error Handling
 
@@ -317,9 +300,7 @@ These categories are used for better understanding demographic distributions.
 
 ## Known Limitations
 
-- The accuracy of demographic predictions depends on the external APIs and the quality of the input data.
-- Name-based predictions may not always align with actual gender, age, or nationality.
-- Free tier limits of the external APIs may restrict the number of requests.
+- The natural language search parser uses regex and substring matching only — it does not understand intent, context, or phrasing variations beyond the fixed keyword set. See [Natural Language Query Parser — Limitations](#parser-limitations-and-unhandled-edge-cases) for a full list.
 
 ## Contributing
 
