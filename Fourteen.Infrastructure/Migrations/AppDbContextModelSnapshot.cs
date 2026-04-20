@@ -25,46 +25,70 @@ namespace Fourteen.Infrastructure.Migrations
             modelBuilder.Entity("Fourteen.Domain.Aggregates.Profiles.Profile", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
 
                     b.Property<int>("Age")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("age");
 
                     b.Property<string>("AgeGroup")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("age_group");
 
                     b.Property<string>("CountryId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)")
+                        .HasColumnName("country_id");
+
+                    b.Property<string>("CountryName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("country_name");
 
                     b.Property<double>("CountryProbability")
-                        .HasColumnType("float");
+                        .HasColumnType("float")
+                        .HasColumnName("country_probability");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("Gender")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("gender");
 
                     b.Property<double>("GenderProbability")
-                        .HasColumnType("float");
+                        .HasColumnType("float")
+                        .HasColumnName("gender_probability");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("SampleSize")
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("name");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Age");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("GenderProbability");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Profiles");
+                    b.HasIndex("AgeGroup", "CreatedAt");
+
+                    b.HasIndex("CountryId", "CreatedAt");
+
+                    b.HasIndex("Gender", "CreatedAt");
+
+                    b.ToTable("profiles", (string)null);
                 });
 #pragma warning restore 612, 618
         }

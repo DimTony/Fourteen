@@ -29,9 +29,13 @@ namespace Fourteen.Application.Features.Profiles.Queries.GetAllProfiles
                 Id = p.Id.Value,
                 Name = p.Name,
                 Gender = p.Gender,
+                GenderProbability = p.GenderProbability,
                 Age = p.Age,
                 AgeGroup = p.AgeGroup,
-                CountryId = p.CountryId
+                CountryId = p.CountryId,
+                CountryName = p.CountryName,
+                CountryProbability = p.CountryProbability,
+                CreatedAt = p.CreatedAt.ToString("o")
             }).ToList() ?? [];
 
             return Result.Success(new GetAllProfilesResult
