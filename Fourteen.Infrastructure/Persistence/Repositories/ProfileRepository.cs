@@ -1,4 +1,5 @@
 ﻿using Fourteen.Application.Interfaces;
+using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
 using Fourteen.Domain.Aggregates.Profiles;
 using Fourteen.Domain.Common;
 using Microsoft.EntityFrameworkCore;
@@ -19,12 +20,12 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
 
         public Task<Profile?> GetByName(string name, CancellationToken ct = default)
         {
-            return _context.Profiles.FirstOrDefaultAsync(p => p.Name == name, ct);
+            return _context.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.Name == name, ct);
         }
 
         public Task<List<Profile>> GetAll(string? gender, string? countryId, string? ageGroup, CancellationToken ct = default)
         {
-            var query = _context.Profiles.AsQueryable();
+            var query = _context.Profiles.AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrEmpty(gender))
             {
@@ -42,6 +43,38 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
             }
 
             return query.ToListAsync(ct);
+        }
+
+        public async Task<(IEnumerable<Profile>, int)> GetPagedAsync(GetProfilesQuery q, CancellationToken ct = default)
+        {
+            var query = _context.Profiles.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrEmpty(q.Gender))        query = query.Where(p => p.Gender == q.Gender);
+            if (!string.IsNullOrEmpty(q.AgeGroup))      query = query.Where(p => p.AgeGroup == q.AgeGroup);
+            if (!string.IsNullOrEmpty(q.CountryId))     query = query.Where(p => p.CountryId == q.CountryId);
+            if (q.MinAge.HasValue)                      query = query.Where(p => p.Age >= q.MinAge.Value);
+            if (q.MaxAge.HasValue)                      query = query.Where(p => p.Age <= q.MaxAge.Value);
+            if (q.MinGenderProbability.HasValue)        query = query.Where(p => p.GenderProbability >= q.MinGenderProbability.Value);
+            if (q.MinCountryProbability.HasValue)       query = query.Where(p => p.CountryProbability >= q.MinCountryProbability.Value);
+
+            var total = await query.CountAsync(ct);
+
+            query = (q.SortBy, q.Order) switch
+            {
+                ("age", "asc")                    => query.OrderBy(p => p.Age),
+                ("age", "desc")                   => query.OrderByDescending(p => p.Age),
+                ("gender_probability", "asc")     => query.OrderBy(p => p.GenderProbability),
+                ("gender_probability", "desc")    => query.OrderByDescending(p => p.GenderProbability),
+                ("created_at", "desc")            => query.OrderByDescending(p => p.CreatedAt),
+                _                                 => query.OrderBy(p => p.CreatedAt),
+            };
+
+            var items = await query
+                .Skip((q.Page - 1) * q.Limit)
+                .Take(q.Limit)
+                .ToListAsync(ct);
+
+            return (items, total);
         }
     }
 

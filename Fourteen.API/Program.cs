@@ -1,5 +1,8 @@
 using Fourteen.API.Extensions;
 using Fourteen.Infrastructure;
+using Fourteen.Infrastructure.Persistence;
+using Fourteen.Infrastructure.Persistence.Seed;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 
@@ -41,28 +44,39 @@ builder.Services.AddApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-// Log all registered routes on startup
-app.Lifetime.ApplicationStarted.Register(() =>
+using (var scope = app.Services.CreateScope())
 {
-    var routes = app.Services.GetService<IEnumerable<EndpointDataSource>>();
-    if (routes != null)
-    {
-        Log.Information("=== Registered Endpoints ===");
-        foreach (var endpointDataSource in routes)
-        {
-            foreach (var endpoint in endpointDataSource.Endpoints)
-            {
-                if (endpoint is RouteEndpoint routeEndpoint)
-                {
-                    Log.Information("Route: {Pattern} | DisplayName: {DisplayName}", 
-                        routeEndpoint.RoutePattern.RawText, 
-                        routeEndpoint.DisplayName);
-                }
-            }
-        }
-        Log.Information("============================");
-    }
-});
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await context.Database.MigrateAsync();
+
+    var seeder = new ProfileSeeder(context);
+    var jsonPath = Path.Combine(AppContext.BaseDirectory, "profiles.json");
+    // await seeder.SeedAsync("Infrastructure/Seed/profiles.json");
+    await seeder.SeedAsync(jsonPath);
+}
+
+// Log all registered routes on startup
+// app.Lifetime.ApplicationStarted.Register(() =>
+// {
+//     var routes = app.Services.GetService<IEnumerable<EndpointDataSource>>();
+//     if (routes != null)
+//     {
+//         Log.Information("=== Registered Endpoints ===");
+//         foreach (var endpointDataSource in routes)
+//         {
+//             foreach (var endpoint in endpointDataSource.Endpoints)
+//             {
+//                 if (endpoint is RouteEndpoint routeEndpoint)
+//                 {
+//                     Log.Information("Route: {Pattern} | DisplayName: {DisplayName}", 
+//                         routeEndpoint.RoutePattern.RawText, 
+//                         routeEndpoint.DisplayName);
+//                 }
+//             }
+//         }
+//         Log.Information("============================");
+//     }
+// });
 
 app.UseApiMiddleware();
 

@@ -1,4 +1,5 @@
 ﻿using Fourteen.Application.Common.Behaviors;
+using Fourteen.Application.Common.DTOs;
 using Fourteen.Application.Interfaces;
 using Fourteen.Infrastructure.Persistence;
 using Fourteen.Infrastructure.Persistence.Repositories;
@@ -60,7 +61,7 @@ namespace Fourteen.Infrastructure;
             IConfiguration configuration)
         {
             services.AddScoped<IServices, ExternalServices>();
-
+            services.AddScoped<NaturalLanguageQueryParser>();
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(FeatureFlagBehaviour<,>));
 
             services.AddHttpClient("genderize", c =>

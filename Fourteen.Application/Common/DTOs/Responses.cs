@@ -1,12 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
+using Fourteen.Domain.Aggregates.Profiles;
 
 namespace Fourteen.Application.Common.DTOs
 {
+    public class PagedResult<T>
+    {
+        public IEnumerable<T> Data { get; init; } = Enumerable.Empty<T>();
+        public int TotalCount { get; init; }
+        public int Page { get; init; }
+        public int PageSize { get; init; }
+
+        public static PagedResult<T> From(
+            IEnumerable<T> data,
+            int totalCount,
+            int page,
+            int pageSize) =>
+            new()
+            {
+                Data = data,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+            };
+    }
+    
+    public class SeedFile
+    {
+        [JsonPropertyName("profiles")]
+        public List<SeedProfileDto> Profiles { get; set; } = [];
+    }
+    public class SeedProfileDto
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("gender")]
+        public string Gender { get; set; } = string.Empty;
+
+        [JsonPropertyName("gender_probability")]
+        public float GenderProbability { get; set; }
+
+        [JsonPropertyName("age")]
+        public int Age { get; set; }
+
+        [JsonPropertyName("age_group")]
+        public string AgeGroup { get; set; } = string.Empty;
+
+        [JsonPropertyName("country_id")]
+        public string CountryId { get; set; } = string.Empty;
+
+        [JsonPropertyName("country_name")]
+        public string CountryName { get; set; } = string.Empty;
+
+        [JsonPropertyName("country_probability")]
+        public float CountryProbability { get; set; }
+    }
+    
     public class GenderizeResponse
     {
         [JsonPropertyName("name")]
@@ -100,6 +149,9 @@ namespace Fourteen.Application.Common.DTOs
         [JsonPropertyName("gender")]
         public required string Gender { get; set; }
 
+        [JsonPropertyName("gender_probability")]
+        public required double GenderProbability { get; set; }
+
         [JsonPropertyName("age")]
         public required int Age { get; set; }
 
@@ -108,6 +160,33 @@ namespace Fourteen.Application.Common.DTOs
 
         [JsonPropertyName("country_id")]
         public required string CountryId { get; set; }
+
+        [JsonPropertyName("country_name")]
+        public required string CountryName { get; set; }
+
+        [JsonPropertyName("country_probability")]
+        public required double CountryProbability { get; set; }
+
+        [JsonPropertyName("created_at")]
+        public required string CreatedAt { get; set; }
+
+        public static ProfileDto From(Profile profile)
+        {
+            return new ProfileDto
+            {
+                Id = profile.Id.Value,
+                Name = profile.Name,
+                Gender = profile.Gender,
+                GenderProbability = profile.GenderProbability,
+                Age = profile.Age,
+                AgeGroup = profile.AgeGroup,
+                CountryId = profile.CountryId,
+                CountryName = profile.CountryName,
+                CountryProbability = profile.CountryProbability,
+                CreatedAt = profile.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            };
+        }
+
 
     }
 
@@ -170,6 +249,25 @@ namespace Fourteen.Application.Common.DTOs
         [JsonPropertyName("data")]
         public required List<ProfileDto> Data { get; set; }
     }
+
+    public class GetProfilesSuccessResponse
+    {
+        [JsonPropertyName("status")]
+        public required string Status { get; set; }
+
+        [JsonPropertyName("page")]
+        public required int Page { get; set; }
+
+        [JsonPropertyName("limit")]
+        public required int Limit { get; set; }
+
+        [JsonPropertyName("total")]
+        public required int Total { get; set; }
+
+        [JsonPropertyName("data")]
+        public required IEnumerable<ProfileDto> Data { get; set; }
+    }
+
 
     public class GetAllProfilesResult
     {

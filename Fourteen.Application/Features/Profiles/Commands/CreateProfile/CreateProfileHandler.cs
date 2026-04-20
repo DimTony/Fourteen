@@ -39,9 +39,12 @@ namespace Fourteen.Application.Features.Profiles.Commands.CreateProfile
                 data.Name ?? name,
                 data.Gender!,
                 data.GenderProbability ?? 0,
-                data.Count,
+                // data.Count,
                 data.Age!.Value,
+                "",
+
                 data.Country_Id!,
+                "",
                 data.CountryProbability ?? 0);
 
             await _profileRepo.AddAsync(profile, cancellationToken);
