@@ -57,23 +57,27 @@
         },
         {
           "name": "Features__CreateProfile",
+          "value": "false"
+        },
+        {
+          "name": "Features__GetProfiles",
           "value": "true"
         },
         {
           "name": "Features__GetProfileById",
-          "value": "true"
+          "value": "false"
         },
         {
           "name": "Features__GetAllProfiles",
-          "value": "true"
+          "value": "false"
         },
         {
           "name": "Features__DeleteProfile",
-          "value": "true"
+          "value": "false"
         },
         {
           "name": "Features__ClassifyName",
-          "value": "true"
+          "value": "false"
         }
       ],
       "secrets": [
