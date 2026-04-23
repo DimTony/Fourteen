@@ -33,6 +33,11 @@ namespace Fourteen.API.Middleware
                 _logger.LogInformation(ex, "No prediction available");
                 await WriteError(ctx, 200, ex.Message);
             }
+            catch (UnparsableQueryException ex)
+            {
+                _logger.LogInformation(ex, "Try: 'young males', 'adult females from Kenya', 'teenagers above 17'");
+                await WriteError(ctx, 400, ex.Message);
+            }
             catch (UpstreamApiException ex)
             {
                 var status = ex.StatusCode is 502 or null ? 502 : 500;
