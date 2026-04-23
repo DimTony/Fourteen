@@ -64,6 +64,10 @@
           "value": "true"
         },
         {
+          "name": "Features__SearchProfiles",
+          "value": "true"
+        },
+        {
           "name": "Features__GetProfileById",
           "value": "false"
         },

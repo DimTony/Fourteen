@@ -2,7 +2,7 @@
 using Fourteen.Application.Features.Profiles.Commands.CreateProfile;
 using Fourteen.Application.Features.Profiles.Commands.DeleteProfile;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
-using Fourteen.Application.Features.Profiles.Queries.GetProfileById;
+using Fourteen.Application.Features.Profiles.Queries.SearchProfiles;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,13 +13,11 @@ namespace Fourteen.API.Controllers
     public class ProfilesController : ControllerBase
     {
         private readonly IMediator mediator;
-        private readonly NaturalLanguageQueryParser parser;
         private readonly ILogger<ProfilesController> _logger;
 
-        public ProfilesController(IMediator mediator, NaturalLanguageQueryParser parser, ILogger<ProfilesController> logger)
+        public ProfilesController(IMediator mediator, ILogger<ProfilesController> logger)
         {
             this.mediator = mediator;
-            this.parser = parser;
             _logger = logger;
         }
 
@@ -32,13 +30,13 @@ namespace Fourteen.API.Controllers
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status502BadGateway)]
-        public async Task<IActionResult> GetAllProfile([FromQuery] ProfileFilterRequest request, CancellationToken ct)
+        public async Task<IActionResult> GetAllProfile([FromQuery] ProfileFilterApiRequest request, CancellationToken ct)
         {
             if (!request.IsValid(out var error))
                 return BadRequest(new { status = "error", message = error });
 
              var query = new GetProfilesQuery(request.Gender, request.AgeGroup, request.CountryId, request.MinAge, request.MaxAge,
-                                              request.MinGenderProbability, request.MinCountryProbability,
+                                              request.MinGenderProbability, request.MaxGenderProbability, request.MinCountryProbability,
                                               request.SortBy, request.Order, request.Page, request.Limit);
 
             var result = await this.mediator.Send(query, ct);
@@ -79,17 +77,13 @@ namespace Fourteen.API.Controllers
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status502BadGateway)]
-        public async Task<IActionResult> SearchProfiles([FromQuery] string? q, CancellationToken ct, int page = 1, int limit = 10)
+        public async Task<IActionResult> SearchProfiles([FromQuery] SearchApiRequest request, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(q))
+            if (string.IsNullOrWhiteSpace(request.RawQuery))
                 return BadRequest(new { status = "error", message = "Missing or empty parameter" });
-
-            var parsed = this.parser.Parse(q, page, Math.Min(limit, 50));
             
-            if (parsed.IsFailure)
-                return UnprocessableEntity(new { status = "error", message = parsed.Error });
 
-            var result = await this.mediator.Send(parsed.Value, ct);
+            var result = await this.mediator.Send(new SearchProfilesQuery(request.RawQuery, request.SortBy, request.Order, request.Page, request.Limit), ct);
 
             if (result.IsFailure)
             {
@@ -104,8 +98,8 @@ namespace Fourteen.API.Controllers
             var response = new GetProfilesSuccessResponse
             {
                 Status = "success",
-                Page = parsed.Value.Page,
-                Limit = parsed.Value.Limit,
+                Page = request.Page,
+                Limit = request.Limit,
                 Total = profilesResult.TotalCount,
                 Data = profilesResult.Data
             };
