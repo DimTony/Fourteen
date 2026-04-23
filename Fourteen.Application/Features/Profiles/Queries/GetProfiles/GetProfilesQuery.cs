@@ -13,6 +13,7 @@ namespace Fourteen.Application.Features.Profiles.Queries.GetProfiles
         int? MinAge,
         int? MaxAge,
         float? MinGenderProbability,
+        float? MaxGenderProbability,
         float? MinCountryProbability,
         string SortBy = "created_at",       // age | created_at | gender_probability
         string Order = "asc",

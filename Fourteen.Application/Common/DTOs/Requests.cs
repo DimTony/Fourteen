@@ -1,23 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
 
 
 namespace Fourteen.Application.Common.DTOs
 {
-    public class ProfileFilterRequest
+    public class ProfileFilterApiRequest
     {
         public string? Gender { get; set; }
+
+        [FromQuery(Name = "age_group")]
         public string? AgeGroup { get; set; }
+
+        [FromQuery(Name = "country_id")]
         public string? CountryId { get; set; }
+
+        [FromQuery(Name = "min_age")]
         public int? MinAge { get; set; }
+
+        [FromQuery(Name = "max_age")]
         public int? MaxAge { get; set; }
+
+        [FromQuery(Name = "min_gender_probability")]
         public float? MinGenderProbability { get; set; }
+
+        [FromQuery(Name = "max_gender_probability")]
+        public float? MaxGenderProbability { get; set; }
+
+        [FromQuery(Name = "min_country_probability")]
         public float? MinCountryProbability { get; set; }
+
+        [FromQuery(Name = "sort_by")]
         public string SortBy { get; set; } = "created_at";
+
         public string Order { get; set; } = "asc";
         public int Page { get; set; } = 1;
         public int Limit { get; set; } = 10;
@@ -36,16 +51,35 @@ namespace Fourteen.Application.Common.DTOs
             error = null;
             return true;
         }
-
-        public GetProfilesQuery ToQuery() =>
-            new(Gender, AgeGroup, CountryId, MinAge, MaxAge,
-                MinGenderProbability, MinCountryProbability,
-                SortBy, Order, Page, Math.Min(Limit, 50));
     }
 
     public class CreateProfileRequest
     {
         [JsonPropertyName("name")]
         public string Name { get; set; } = default!;
+    }
+
+    public class SearchApiRequest
+    {
+        [FromQuery(Name = "q")]
+        public string? RawQuery { get; set; }
+        [FromQuery(Name = "sort_by")]
+        public string SortBy { get; set; } = "created_at";       // age | created_at | gender_probability
+        [FromQuery(Name = "order")]
+        public string Order { get; set; } = "asc";
+        [FromQuery(Name = "page")]
+        public int Page { get; set; } = 1;
+        [FromQuery(Name = "limit")]
+        public int Limit { get; set; } = 10;
+    }
+    public class ParsedProfileFilter
+    {
+        public string? Gender { get; init; }
+        public int? AgeMin { get; init; }
+        public int? AgeMax { get; init; }
+        public string? CountryId { get; init; }
+
+        public bool IsEmpty =>
+            Gender is null && AgeMin is null && AgeMax is null && CountryId is null;
     }
 }

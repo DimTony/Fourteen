@@ -1,5 +1,6 @@
 ﻿using Fourteen.Application.Interfaces;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
+using Fourteen.Application.Common.DTOs;
 using Fourteen.Domain.Aggregates.Profiles;
 using Fourteen.Domain.Common;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +46,33 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
             return query.ToListAsync(ct);
         }
 
+        public async Task<(IEnumerable<Profile>, int)> NaturalLanguageSearch(ParsedProfileFilter filter, int page = 1, int limit = 10, CancellationToken ct = default)
+        {
+            var query = _context.Profiles.AsNoTracking().AsQueryable();
+
+            if (filter.Gender is not null)
+                query = query.Where(p => p.Gender == filter.Gender);
+
+            if (filter.AgeMin is not null)
+                query = query.Where(p => p.Age >= filter.AgeMin);
+
+            if (filter.AgeMax is not null)
+                query = query.Where(p => p.Age <= filter.AgeMax);
+
+            if (filter.CountryId is not null)
+                query = query.Where(p => p.CountryId == filter.CountryId);
+
+            var total = await query.CountAsync(ct);
+
+            var items = await query
+                .Skip((page - 1) * limit)
+                .Take(limit)
+                .OrderBy(p => p.Name)
+                .ToListAsync(ct);
+
+            return (items, total);
+        }
+
         public async Task<(IEnumerable<Profile>, int)> GetPagedAsync(GetProfilesQuery q, CancellationToken ct = default)
         {
             var query = _context.Profiles.AsNoTracking().AsQueryable();
@@ -55,6 +83,7 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
             if (q.MinAge.HasValue)                      query = query.Where(p => p.Age >= q.MinAge.Value);
             if (q.MaxAge.HasValue)                      query = query.Where(p => p.Age <= q.MaxAge.Value);
             if (q.MinGenderProbability.HasValue)        query = query.Where(p => p.GenderProbability >= q.MinGenderProbability.Value);
+            if (q.MaxGenderProbability.HasValue)        query = query.Where(p => p.GenderProbability <= q.MaxGenderProbability.Value);
             if (q.MinCountryProbability.HasValue)       query = query.Where(p => p.CountryProbability >= q.MinCountryProbability.Value);
 
             var total = await query.CountAsync(ct);
