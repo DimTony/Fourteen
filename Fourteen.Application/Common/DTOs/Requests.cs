@@ -7,6 +7,7 @@ namespace Fourteen.Application.Common.DTOs
 {
     public class ProfileFilterApiRequest
     {
+        [FromQuery(Name = "gender")]
         public string? Gender { get; set; }
 
         [FromQuery(Name = "age_group")]
@@ -33,8 +34,13 @@ namespace Fourteen.Application.Common.DTOs
         [FromQuery(Name = "sort_by")]
         public string SortBy { get; set; } = "created_at";
 
+        [FromQuery(Name = "order")]
         public string Order { get; set; } = "asc";
+
+        [FromQuery(Name = "page")]
         public int Page { get; set; } = 1;
+        
+        [FromQuery(Name = "limit")]
         public int Limit { get; set; } = 10;
 
         private static readonly HashSet<string> ValidSortFields = ["age", "created_at", "gender_probability"];
@@ -81,5 +87,19 @@ namespace Fourteen.Application.Common.DTOs
 
         public bool IsEmpty =>
             Gender is null && AgeMin is null && AgeMax is null && CountryId is null;
+    }
+
+    public record OAuthState(string? CodeChallenge, string? CliCallback);
+
+    public class LogoutRequest
+    {
+        [JsonPropertyName("refresh_token")]
+        public string? RefreshToken { get; set; }
+    }
+
+    public class RefreshRequest
+    {
+        [JsonPropertyName("refresh_token")]
+        public string? RefreshToken { get; set; }
     }
 }

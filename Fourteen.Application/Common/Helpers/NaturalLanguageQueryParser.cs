@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
-using Fourteen.Domain.Common;
+using Fourteen.Application.Common.DTOs;
 
-namespace Fourteen.Application.Common.DTOs
+namespace Fourteen.Application.Common.Helpers
 {
     public class NaturalLanguageQueryParser
     {
@@ -517,11 +517,9 @@ namespace Fourteen.Application.Common.DTOs
                 countryId = cid;
         }
 
-        // Both genders mentioned → no gender filter
         if (genderTokensFound.Count == 1)
             gender = genderTokensFound.First();
 
-        // Explicit age overrides age group, but age group sets the ceiling for "above X"
         int? ageMin = explicitAge.Min;
         int? ageMax = explicitAge.Max;
 
@@ -557,47 +555,5 @@ namespace Fourteen.Application.Common.DTOs
             return (null, null);
         }
 
-
-        // public Result<GetProfilesQuery> Parse(string query, int page, int limit)
-        // {
-        //     if (string.IsNullOrWhiteSpace(query))
-        //         return Result.Failure<GetProfilesQuery>("Unable to interpret query");
-
-        //     var q = query.ToLowerInvariant();
-        //     string? gender = null;
-        //     string? ageGroup = null;
-        //     string? countryId = null;
-        //     int? minAge = null, maxAge = null;
-
-        //     bool hasMale = Regex.IsMatch(q, @"\bmales?\b");
-        //     bool hasFemale = Regex.IsMatch(q, @"\bfemales?\b");
-        //     if (hasMale && !hasFemale) gender = "male";
-        //     else if (hasFemale && !hasMale) gender = "female";
-            
-
-        //     if (q.Contains("teenager") || q.Contains("teen")) ageGroup = "teenager";
-        //     else if (q.Contains("adult")) ageGroup = "adult";
-        //     else if (q.Contains("senior") || q.Contains("elderly")) ageGroup = "senior";
-        //     else if (q.Contains("child") || q.Contains("children")) ageGroup = "child";
-
-        //     if (q.Contains("young")) { minAge = 16; maxAge = 24; }
-
-        //     var aboveMatch = Regex.Match(q, @"(?:above|over|older than)\s+(\d+)");
-        //     if (aboveMatch.Success) minAge = int.Parse(aboveMatch.Groups[1].Value);
-
-        //     var belowMatch = Regex.Match(q, @"(?:below|under|younger than)\s+(\d+)");
-        //     if (belowMatch.Success) maxAge = int.Parse(belowMatch.Groups[1].Value);
-
-        //     foreach (var (name, code) in CountryMap.OrderByDescending(kv => kv.Key.Length))
-        //         if (Regex.IsMatch(q, $@"\b{Regex.Escape(name)}\b")) { countryId = code; break; }
-
-        //     if (gender == null && ageGroup == null && countryId == null
-        //     && minAge == null && maxAge == null)
-        //         return Result.Failure<GetProfilesQuery>("Unable to interpret query");
-
-        //     return Result.Success(new GetProfilesQuery(
-        //         gender, ageGroup, countryId, minAge, maxAge,
-        //         null, null, "created_at", "asc", page, limit));
-        // }
     }
 }

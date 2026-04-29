@@ -15,7 +15,7 @@ namespace Fourteen.Application.Features.Profiles.Queries.GetProfiles
         float? MinGenderProbability,
         float? MaxGenderProbability,
         float? MinCountryProbability,
-        string SortBy = "created_at",       // age | created_at | gender_probability
+        string SortBy = "created_at",
         string Order = "asc",
         int Page = 1,
         int Limit = 10) : IRequest<Result<PagedResult<ProfileDto>>>, IRequiresFeature

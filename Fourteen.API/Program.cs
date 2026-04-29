@@ -22,22 +22,22 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-Log.Information("Starting Fourteen API...");
-Log.Information("Environment: {Environment}", builder.Environment.EnvironmentName);
+// Log.Information("Starting Fourteen API...");
+// Log.Information("Environment: {Environment}", builder.Environment.EnvironmentName);
 
-// Log all configuration keys (without sensitive values)
-Log.Information("=== Configuration Diagnostics ===");
-Log.Information("Features:CreateProfile = {Value}", 
-    builder.Configuration.GetValue<bool>("Features:CreateProfile"));
-Log.Information("Features:GetProfileById = {Value}", 
-    builder.Configuration.GetValue<bool>("Features:GetProfileById"));
-Log.Information("Features:GetAllProfiles = {Value}", 
-    builder.Configuration.GetValue<bool>("Features:GetAllProfiles"));
-Log.Information("Features:DeleteProfile = {Value}", 
-    builder.Configuration.GetValue<bool>("Features:DeleteProfile"));
-Log.Information("Features:ClassifyName = {Value}", 
-    builder.Configuration.GetValue<bool>("Features:ClassifyName"));
-Log.Information("=================================");
+// // Log all configuration keys (without sensitive values)
+// Log.Information("=== Configuration Diagnostics ===");
+// Log.Information("Features:CreateProfile = {Value}", 
+//     builder.Configuration.GetValue<bool>("Features:CreateProfile"));
+// Log.Information("Features:GetProfileById = {Value}", 
+//     builder.Configuration.GetValue<bool>("Features:GetProfileById"));
+// Log.Information("Features:GetAllProfiles = {Value}", 
+//     builder.Configuration.GetValue<bool>("Features:GetAllProfiles"));
+// Log.Information("Features:DeleteProfile = {Value}", 
+//     builder.Configuration.GetValue<bool>("Features:DeleteProfile"));
+// Log.Information("Features:ClassifyName = {Value}", 
+//     builder.Configuration.GetValue<bool>("Features:ClassifyName"));
+// Log.Information("=================================");
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApiServices(builder.Configuration);
@@ -81,21 +81,21 @@ using (var scope = app.Services.CreateScope())
 app.UseApiMiddleware();
 
 // Add request logging middleware
-app.Use(async (context, next) =>
-{
-    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("Incoming Request: {Method} {Path} from {RemoteIp}", 
-        context.Request.Method, 
-        context.Request.Path,
-        context.Connection.RemoteIpAddress);
+// app.Use(async (context, next) =>
+// {
+//     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+//     logger.LogInformation("Incoming Request: {Method} {Path} from {RemoteIp}", 
+//         context.Request.Method, 
+//         context.Request.Path,
+//         context.Connection.RemoteIpAddress);
     
-    await next();
+//     await next();
     
-    logger.LogInformation("Response: {StatusCode} for {Method} {Path}", 
-        context.Response.StatusCode,
-        context.Request.Method, 
-        context.Request.Path);
-});
+//     logger.LogInformation("Response: {StatusCode} for {Method} {Path}", 
+//         context.Response.StatusCode,
+//         context.Request.Method, 
+//         context.Request.Path);
+// });
 
 app.MapHealthChecks("/api/health");
 

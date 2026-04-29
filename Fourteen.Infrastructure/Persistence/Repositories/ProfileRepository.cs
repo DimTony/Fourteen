@@ -46,7 +46,7 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
             return query.ToListAsync(ct);
         }
 
-        public async Task<(IEnumerable<Profile>, int)> NaturalLanguageSearch(ParsedProfileFilter filter, int page = 1, int limit = 10, CancellationToken ct = default)
+        public async Task<(IReadOnlyList<Profile>, int)> NaturalLanguageSearch(ParsedProfileFilter filter, int page = 1, int limit = 10, CancellationToken ct = default)
         {
             var query = _context.Profiles.AsNoTracking().AsQueryable();
 
@@ -73,7 +73,7 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
             return (items, total);
         }
 
-        public async Task<(IEnumerable<Profile>, int)> GetPagedAsync(GetProfilesQuery q, CancellationToken ct = default)
+        public async Task<(IReadOnlyList<Profile>, int)> GetPagedAsync(GetProfilesQuery q, CancellationToken ct = default)
         {
             var query = _context.Profiles.AsNoTracking().AsQueryable();
 

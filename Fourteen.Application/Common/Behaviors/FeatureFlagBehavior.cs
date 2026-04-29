@@ -26,7 +26,6 @@ namespace Fourteen.Application.Common.Behaviors
             RequestHandlerDelegate<TResponse> next,
             CancellationToken ct)
         {
-            // Only intercept requests that declare a feature requirement
             if (request is not IRequiresFeature flagged)
             {
                 _logger.LogDebug("Request {RequestType} does not require feature flag check", 
@@ -36,12 +35,6 @@ namespace Fourteen.Application.Common.Behaviors
 
             var isEnabled = _config.GetValue<bool>(flagged.FeatureFlag);
 
-            _logger.LogInformation(
-                "Feature Flag Check: {FeatureFlag} = {IsEnabled} for Request {RequestType}",
-                flagged.FeatureFlag,
-                isEnabled,
-                typeof(TRequest).Name);
-
             if (!isEnabled)
             {
                 _logger.LogWarning(
@@ -49,7 +42,6 @@ namespace Fourteen.Application.Common.Behaviors
                     flagged.FeatureFlag,
                     typeof(TRequest).Name);
 
-                // Return a failure Result without ever touching the handler
                 var resultType = typeof(TResponse);
 
                 if (resultType == typeof(Result))
@@ -73,11 +65,6 @@ namespace Fourteen.Application.Common.Behaviors
                     $"Feature '{flagged.FeatureFlag}' is disabled and response type " +
                     $"'{resultType.Name}' does not support failure results.");
             }
-
-            _logger.LogInformation(
-                "Feature {FeatureFlag} is ENABLED. Proceeding with request {RequestType}",
-                flagged.FeatureFlag,
-                typeof(TRequest).Name);
 
             return await next();
         }
