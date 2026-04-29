@@ -71,6 +71,10 @@ namespace Fourteen.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("name");
 
+                    b.Property<int>("SampleSize")
+                        .HasColumnType("int")
+                        .HasColumnName("sample_size");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Age");

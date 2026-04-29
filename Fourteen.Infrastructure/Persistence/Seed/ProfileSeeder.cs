@@ -19,7 +19,7 @@ namespace Fourteen.Infrastructure.Persistence.Seed
             var toInsert = raw
                 .Where(r => !existingNames.Contains(r.Name))
                 .Select(r => Profile.Create(
-                    r.Name, r.Gender, r.GenderProbability,
+                    r.Name, r.Gender, r.GenderProbability, r.SampleSize,
                     r.Age, r.AgeGroup, r.CountryId, r.CountryName, r.CountryProbability))
                 .ToList();
 
@@ -46,7 +46,7 @@ namespace Fourteen.Infrastructure.Persistence.Seed
             var toInsert = raw.Profiles
                 .Where(r => !existingNames.Contains(r.Name))
                 .Select(r => Profile.Create(
-                    r.Name, r.Gender, r.GenderProbability,
+                    r.Name, r.Gender, r.GenderProbability, r.SampleSize,
                     r.Age, r.AgeGroup, r.CountryId, r.CountryName, r.CountryProbability))
                 .ToList();
 

@@ -41,7 +41,7 @@ namespace Fourteen.Infrastructure.Services
 
         public string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride)
         {
-            var redirectUri = _config["GitHub:RedirectUri"];
+            var redirectUri = _config["GitHub:RedirectUri"] ?? string.Empty;
 
             _memoryCache.Set($"oauth:{state}", new OAuthState(codeChallenge, callbackOverride), 
                     TimeSpan.FromMinutes(10));
