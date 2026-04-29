@@ -30,6 +30,10 @@ namespace Fourteen.Infrastructure.Persistence.Configurations
             builder.Property(p => p.GenderProbability)
                 .HasColumnName("gender_probability");
 
+            builder.Property(p => p.SampleSize)
+                .IsRequired()
+                .HasColumnName("sample_size");
+
             builder.Property(p => p.Age)
                 .HasColumnName("age");
 

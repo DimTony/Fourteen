@@ -1,4 +1,5 @@
 ﻿using Fourteen.Domain.Aggregates.Profiles;
+using Fourteen.Domain.Aggregates.Users;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,7 @@ namespace Fourteen.Application.Interfaces
     public interface IReadDbContext
     {
         IQueryable<Profile> Profiles { get; }
+        IQueryable<User> Users { get; }
+        IQueryable<RefreshToken> RefreshTokens { get; }
     }
 }

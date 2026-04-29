@@ -2,7 +2,7 @@
   "family": "genderize-task",
   "executionRoleArn": "arn:aws:iam::012834916544:role/ecsTaskExecutionRole",
   "networkMode": "awsvpc",
-  "requiresCompatibilities": [ "FARGATE" ],
+  "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "1024",
   "runtimePlatform": {
@@ -82,12 +82,88 @@
         {
           "name": "Features__ClassifyName",
           "value": "false"
+        },
+        {
+          "name": "Features__ProfilesEndpoint",
+          "value": "false"
+        },
+        {
+          "name": "Features__ClassifyEndpoint",
+          "value": "false"
+        },
+        {
+          "name": "Features__UserManagement",
+          "value": "false"
+        },
+        {
+          "name": "Jwt__Issuer",
+          "value": "FourteenAPI"
+        },
+        {
+          "name": "Jwt__Audience",
+          "value": "FourteenAPI"
+        },
+        {
+          "name": "Jwt__ExpirationMinutes",
+          "value": "60"
+        },
+        {
+          "name": "GitHub__RedirectUri",
+          "value": "https://your-domain.com/api/auth/github/callback"
+        },
+        {
+          "name": "GitHub__GithubAuthUrl",
+          "value": "https://github.com/login/oauth/authorize"
+        },
+        {
+          "name": "GitHub__GithubTokenUrl",
+          "value": "https://github.com/login/oauth/access_token"
+        },
+        {
+          "name": "GitHub__GithubApiUrl",
+          "value": "https://api.github.com/user"
+        },
+        {
+          "name": "GitHub__GithubEmailsApiUrl",
+          "value": "https://api.github.com/user/emails"
+        },
+        {
+          "name": "RateLimiting__Auth__PermitLimit",
+          "value": "5"
+        },
+        {
+          "name": "RateLimiting__Auth__WindowSeconds",
+          "value": "60"
+        },
+        {
+          "name": "RateLimiting__Api__PermitLimit",
+          "value": "100"
+        },
+        {
+          "name": "RateLimiting__Api__WindowSeconds",
+          "value": "60"
+        },
+        {
+          "name": "App__AllowedOrigins",
+          "value": "http://localhost:3000,https://your-domain.com"
         }
       ],
       "secrets": [
         {
           "name": "ConnectionStrings__DefaultConnection",
           "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/ConnectionStrings__DefaultConnection"
+        },
+        {
+          "name": "Jwt__SecretKey",
+          "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/Jwt__SecretKey"
+        },
+        {
+          "name": "GitHub__ClientId",
+          "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/GitHub__ClientId"
+        },
+        {
+          "name": "GitHub__ClientSecret",
+          "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/GitHub__ClientSecret"
         }
       ],
       "logConfiguration": {
