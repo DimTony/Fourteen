@@ -12,6 +12,7 @@ namespace Fourteen.Application.Configurations
         public const string CreateProfile = "Features:CreateProfile";
         public const string GetProfileById = "Features:GetProfileById";
         public const string GetAllProfiles = "Features:GetAllProfiles";
+        public const string GetDashboardStats = "Features:GetDashboardStats";
         public const string DeleteProfile = "Features:DeleteProfile";
         public const string GetProfiles = "Features:GetProfiles";
         public const string SearchProfiles = "Features:SearchProfiles";

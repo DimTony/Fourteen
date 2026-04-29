@@ -1,5 +1,5 @@
 ﻿using Fourteen.Application.Common.Behaviors;
-using Fourteen.Application.Common.DTOs;
+using Fourteen.Application.Common.Helpers;
 using Fourteen.Application.Interfaces;
 using Fourteen.Infrastructure.Persistence;
 using Fourteen.Infrastructure.Persistence.Repositories;
@@ -50,7 +50,8 @@ namespace Fourteen.Infrastructure;
            this IServiceCollection services)
         {
             services.AddScoped<IProfileRepository, ProfileRepository>();
-         
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();    
 
             return services;
         }
@@ -60,14 +61,19 @@ namespace Fourteen.Infrastructure;
             this IServiceCollection services,
             IConfiguration configuration)
         {
+            services.AddHttpContextAccessor();
             services.AddScoped<IServices, ExternalServices>();
+            services.AddScoped<IAuthServices, AuthServices>();
+            services.AddScoped<IGithubClient, GithubService>();
+            services.AddScoped<IJwtService, JwtService>();
+            services.AddMemoryCache();
             services.AddScoped<NaturalLanguageQueryParser>();
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(FeatureFlagBehaviour<,>));
 
             services.AddHttpClient("genderize", c =>
             {
                 var baseUrl = configuration["ExternalApi:GenderizeUrl"]
-                    ?? "https://api.genderize.io";
+                    ?? string.Empty;
 
                 c.BaseAddress = new Uri(baseUrl);
             });
@@ -75,14 +81,14 @@ namespace Fourteen.Infrastructure;
             services.AddHttpClient("agify", c =>
             {
                 var baseUrl = configuration["ExternalApi:AgifyUrl"]
-                    ?? "https://api.agify.io";
+                    ?? string.Empty;
                 c.BaseAddress = new Uri(baseUrl);
             });
 
             services.AddHttpClient("nationalize", c =>
             {
                 var baseUrl = configuration["ExternalApi:NationalizeUrl"]
-                    ?? "https://api.nationalize.io";
+                    ?? string.Empty;
 
                 c.BaseAddress = new Uri(baseUrl);
             });

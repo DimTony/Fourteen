@@ -177,27 +177,252 @@ To run this project locally:
 
 ## Configuration
 
-Key configuration settings:
+### Environment Variables
 
-- `ASPNETCORE_ENVIRONMENT` - Set to `Development` or `Production`
-- `ConnectionStrings:DefaultConnection` - SQL Server connection string
-- `ASPNETCORE_URLS` - URL bindings for the API (e.g., `http://+:8080`)
+All configuration can be set via environment variables using double underscore (`__`) notation to denote nested properties (e.g., `Jwt__SecretKey` maps to `Jwt:SecretKey` in appsettings.json).
+
+#### Database
+
+| Variable                               | Type   | Required | Description                                                                                                                                      |
+| -------------------------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ConnectionStrings__DefaultConnection` | string | ✓ Yes    | SQL Server connection string. Format: `Server=<host>;Database=<db>;User ID=<user>;Password=<password>;Encrypt=True;TrustServerCertificate=True;` |
+
+#### JWT Authentication
+
+| Variable                 | Type   | Required | Default     | Description                                                                                                                |
+| ------------------------ | ------ | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `Jwt__SecretKey`         | string | ✓ Yes    | -           | Secret key for signing JWT tokens. Must be at least 32 characters long. Store as AWS Secrets Manager secret in production. |
+| `Jwt__Issuer`            | string | No       | FourteenAPI | JWT token issuer claim                                                                                                     |
+| `Jwt__Audience`          | string | No       | FourteenAPI | JWT token audience claim                                                                                                   |
+| `Jwt__ExpirationMinutes` | int    | No       | 60          | JWT token expiration time in minutes                                                                                       |
+
+#### GitHub OAuth
+
+| Variable                     | Type   | Required | Description                                                                                         |
+| ---------------------------- | ------ | -------- | --------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `GitHub__ClientId`           | string | ✓ Yes    | OAuth app Client ID from GitHub Developer Settings                                                  |
+| `GitHub__ClientSecret`       | string | ✓ Yes    | OAuth app Client Secret from GitHub Developer Settings. Store as AWS Secrets Manager secret.        |
+| `GitHub__RedirectUri`        | string | ✓ Yes    | Callback URL after GitHub authentication (e.g., `https://your-domain.com/api/auth/github/callback`) |
+| `GitHub__GithubAuthUrl`      | string | No       | https://github.com/login/oauth/authorize                                                            | GitHub OAuth authorization endpoint |
+| `GitHub__GithubTokenUrl`     | string | No       | https://github.com/login/oauth/access_token                                                         | GitHub OAuth token endpoint         |
+| `GitHub__GithubApiUrl`       | string | No       | https://api.github.com/user                                                                         | GitHub API user endpoint            |
+| `GitHub__GithubEmailsApiUrl` | string | No       | https://api.github.com/user/emails                                                                  | GitHub API user emails endpoint     |
+
+#### External APIs
+
+| Variable                      | Type   | Required | Description                     |
+| ----------------------------- | ------ | -------- | ------------------------------- |
+| `ExternalApi__GenderizeUrl`   | string | ✓ Yes    | Base URL for Genderize.io API   |
+| `ExternalApi__AgifyUrl`       | string | ✓ Yes    | Base URL for Agify.io API       |
+| `ExternalApi__NationalizeUrl` | string | ✓ Yes    | Base URL for Nationalize.io API |
+
+#### Feature Flags
+
+All feature flags default to `true` if not specified. Set to `"true"` or `"false"` as strings.
+
+| Variable                     | Type | Default | Description                             |
+| ---------------------------- | ---- | ------- | --------------------------------------- |
+| `Features__CreateProfile`    | bool | false   | Enable profile creation endpoint        |
+| `Features__GetProfiles`      | bool | true    | Enable list/search profiles endpoints   |
+| `Features__SearchProfiles`   | bool | true    | Enable natural language search feature  |
+| `Features__GetProfileById`   | bool | false   | Enable retrieve single profile endpoint |
+| `Features__GetAllProfiles`   | bool | false   | Enable retrieve all profiles endpoint   |
+| `Features__DeleteProfile`    | bool | false   | Enable profile deletion endpoint        |
+| `Features__ClassifyName`     | bool | false   | Enable name classification feature      |
+| `Features__ProfilesEndpoint` | bool | false   | Enable legacy profiles endpoint         |
+| `Features__ClassifyEndpoint` | bool | false   | Enable legacy classify endpoint         |
+| `Features__UserManagement`   | bool | false   | Enable user management features         |
+
+#### Rate Limiting
+
+| Variable                            | Type | Default | Description                                          |
+| ----------------------------------- | ---- | ------- | ---------------------------------------------------- |
+| `RateLimiting__Auth__PermitLimit`   | int  | 5       | Max requests for authentication endpoints per window |
+| `RateLimiting__Auth__WindowSeconds` | int  | 60      | Time window in seconds for auth rate limiting        |
+| `RateLimiting__Api__PermitLimit`    | int  | 100     | Max requests for API endpoints per window            |
+| `RateLimiting__Api__WindowSeconds`  | int  | 60      | Time window in seconds for API rate limiting         |
+
+#### CORS & Application
+
+| Variable                 | Type   | Default               | Description                                                                                          |
+| ------------------------ | ------ | --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `App__AllowedOrigins`    | string | http://localhost:3000 | Comma-separated list of allowed origins for CORS (e.g., `http://localhost:3000,https://example.com`) |
+| `ASPNETCORE_ENVIRONMENT` | string | Production            | Environment name: `Development` or `Production`                                                      |
+| `ASPNETCORE_URLS`        | string | http://+:8080         | URL bindings for the API                                                                             |
+
+### Local Development Configuration
+
+Create `appsettings.Development.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost\\SQLEXPRESS;Database=Fourteen;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "SecretKey": "your-secret-key-min-32-characters-long-for-dev",
+    "Issuer": "FourteenAPI",
+    "Audience": "FourteenAPI",
+    "ExpirationMinutes": 60
+  },
+  "GitHub": {
+    "ClientId": "your-github-app-client-id",
+    "ClientSecret": "your-github-app-client-secret",
+    "RedirectUri": "http://localhost:5261/api/auth/github/callback"
+  },
+  "ExternalApi": {
+    "GenderizeUrl": "https://api.genderize.io",
+    "AgifyUrl": "https://api.agify.io",
+    "NationalizeUrl": "https://api.nationalize.io"
+  },
+  "App": {
+    "AllowedOrigins": "http://localhost:3000,http://localhost:3001"
+  },
+  "Features": {
+    "CreateProfile": true,
+    "SearchProfiles": true,
+    "GetProfileById": true,
+    "GetAllProfiles": true,
+    "DeleteProfile": true,
+    "ProfilesEndpoint": false,
+    "ClassifyName": false,
+    "ClassifyEndpoint": false,
+    "GetProfiles": true,
+    "UserManagement": false
+  }
+}
+```
+
+### AWS ECS Task Definition Configuration
+
+When deploying to AWS ECS, configure environment variables and secrets in the task definition:
+
+1. **Non-sensitive environment variables** are stored in the `environment` array
+2. **Sensitive data** (JWT secret, DB connection string, GitHub credentials) are stored in AWS Systems Manager Parameter Store or AWS Secrets Manager and referenced via `valueFrom` in the `secrets` array
+
+Example task definition parameters to store in AWS SSM Parameter Store:
+
+```
+/fourteen/production/ConnectionStrings__DefaultConnection
+/fourteen/production/Jwt__SecretKey
+/fourteen/production/GitHub__ClientId
+/fourteen/production/GitHub__ClientSecret
+```
 
 ## Deployment
 
 This application is containerized using Docker and deployed on AWS ECS.
 
-### AWS ECS Setup
+### Prerequisites for AWS ECS Deployment
 
-1. Create an ECS cluster
-2. Define a task definition with the appropriate CPU, memory, and network settings
-3. Create a service based on the task definition
-4. Configure scaling policies and load balancer settings as needed
+1. **AWS Account** with permissions to:
+   - Create/manage ECS services and task definitions
+   - Access Systems Manager Parameter Store or Secrets Manager
+   - Access ECR (Elastic Container Registry)
+
+2. **AWS CLI** configured with credentials
+
+3. **Required Secrets** stored in AWS Systems Manager Parameter Store:
+   - `ConnectionStrings__DefaultConnection` - SQL Server connection string
+   - `Jwt__SecretKey` - JWT signing secret (min 32 characters)
+   - `GitHub__ClientId` - GitHub OAuth application client ID
+   - `GitHub__ClientSecret` - GitHub OAuth application client secret
+
+### AWS ECS Setup Steps
+
+1. **Build and Push Docker Image**
+
+   ```bash
+   # Build the image
+   docker build -f Fourteen.API/Dockerfile -t 012834916544.dkr.ecr.eu-north-1.amazonaws.com/genderize:latest .
+
+   # Push to ECR
+   aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 012834916544.dkr.ecr.eu-north-1.amazonaws.com
+   docker push 012834916544.dkr.ecr.eu-north-1.amazonaws.com/genderize:latest
+   ```
+
+2. **Create AWS Systems Manager Parameters**
+
+   ```bash
+   aws ssm put-parameter \
+     --name /fourteen/production/ConnectionStrings__DefaultConnection \
+     --value "Server=<host>;Database=<db>;User ID=<user>;Password=<password>;Encrypt=True;TrustServerCertificate=True;" \
+     --type SecureString \
+     --region eu-north-1
+
+   aws ssm put-parameter \
+     --name /fourteen/production/Jwt__SecretKey \
+     --value "your-secret-key-min-32-characters-long" \
+     --type SecureString \
+     --region eu-north-1
+
+   aws ssm put-parameter \
+     --name /fourteen/production/GitHub__ClientId \
+     --value "your-github-client-id" \
+     --type SecureString \
+     --region eu-north-1
+
+   aws ssm put-parameter \
+     --name /fourteen/production/GitHub__ClientSecret \
+     --value "your-github-client-secret" \
+     --type SecureString \
+     --region eu-north-1
+   ```
+
+3. **Create ECS Task Definition**
+
+   ```bash
+   aws ecs register-task-definition \
+     --cli-input-json file://task-definition.json \
+     --region eu-north-1
+   ```
+
+4. **Create ECS Service**
+
+   ```bash
+   aws ecs create-service \
+     --cluster your-cluster-name \
+     --service-name fourteen-api \
+     --task-definition genderize-task:1 \
+     --desired-count 1 \
+     --launch-type FARGATE \
+     --network-configuration "awsvpcConfiguration={subnets=[subnet-xxx],securityGroups=[sg-xxx],assignPublicIp=ENABLED}" \
+     --load-balancers "targetGroupArn=arn:aws:elasticloadbalancing:eu-north-1:012834916544:targetgroup/fourteen-api/xxx,containerName=genderize-container,containerPort=8080" \
+     --region eu-north-1
+   ```
+
+5. **Configure Auto Scaling** (optional)
+   ```bash
+   aws application-autoscaling register-scalable-target \
+     --service-namespace ecs \
+     --resource-id service/your-cluster/fourteen-api \
+     --scalable-dimension ecs:service:DesiredCount \
+     --min-capacity 1 \
+     --max-capacity 3 \
+     --region eu-north-1
+   ```
 
 ### CI/CD Pipeline
 
-- The project includes a GitHub Actions workflow for automated building and deployment.
-- Customize the `aws-ecs-deploy.yml` file for your deployment preferences.
+- The project includes GitHub Actions workflow support for automated building and deployment
+- Customize workflow files for your deployment preferences
+- Ensure GitHub repository secrets are configured for AWS credentials
+
+### Docker Setup for Local Testing
+
+```bash
+# Build locally
+docker build -f Fourteen.API/Dockerfile -t fourteen:latest .
+
+# Run locally
+docker run -p 8080:8080 \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  -e ConnectionStrings__DefaultConnection="<connection-string>" \
+  -e Jwt__SecretKey="<secret-key>" \
+  -e GitHub__ClientId="<client-id>" \
+  -e GitHub__ClientSecret="<client-secret>" \
+  fourteen:latest
+```
 
 ## Project Structure
 

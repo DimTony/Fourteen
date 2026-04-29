@@ -32,9 +32,6 @@ namespace Fourteen.Infrastructure.Services
             {
                 response = await genderClient.GetAsync(
                     $"?name={Uri.EscapeDataString(name)}", ct);
-
-                //_logger.LogInformation("Called external API for name: {Name}", name);
-                //_logger.LogInformation("RETURNED response for external API: {Response}", response);
             }
             catch (HttpRequestException ex)
             {
@@ -72,9 +69,8 @@ namespace Fourteen.Infrastructure.Services
 
             //_logger.LogInformation("Genderize raw: {Json}", genderJson);
             //_logger.LogInformation("Agify raw:     {Json}", agifyJson);
-            //_logger.LogInformation("Nationalize raw: {Json}", natJson);
+            // _logger.LogInformation("Nationalize raw: {Json}", natJson);
 
-            // Deserialize now that you've confirmed the structure
             var genderData = System.Text.Json.JsonSerializer
                 .Deserialize<GenderizeResponse>(genderJson,
                     new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? throw new Exception("Failed to deserialize Genderize response");
@@ -87,7 +83,6 @@ namespace Fourteen.Infrastructure.Services
                 .Deserialize<NationalizeResponse>(natJson,
                     new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? throw new Exception("Failed to deserialize Nationalize response");
 
-            // Validate responses
             if (genderData?.Gender == null || genderData.Count == 0)
                 throw new UpstreamApiException("Genderize returned an invalid response");
 
