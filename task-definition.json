@@ -54,7 +54,7 @@
         },
         {
           "name": "Features__CreateProfile",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "Features__GetProfiles",
@@ -66,31 +66,31 @@
         },
         {
           "name": "Features__GetProfileById",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "Features__GetAllProfiles",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "Features__DeleteProfile",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "Features__ClassifyName",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "Features__ProfilesEndpoint",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "Features__ClassifyEndpoint",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "Features__UserManagement",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "Features__GetDashboardStats",
