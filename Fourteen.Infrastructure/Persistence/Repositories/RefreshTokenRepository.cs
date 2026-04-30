@@ -21,14 +21,19 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
 
         public async Task<RefreshToken?> FindValidByUser(string rawToken, CancellationToken ct = default)
         {
-            return await _context.RefreshTokens.AsNoTracking()
-                .FirstOrDefaultAsync(rt => rt.Token == rawToken && rt.ExpiresAt > DateTime.UtcNow, ct);
+            var candidates = await _context.RefreshTokens
+                .Where(rt => !rt.IsRevoked && rt.ExpiresAt > DateTime.UtcNow)
+                .ToListAsync(ct);
+
+            return candidates.FirstOrDefault(rt =>
+                BCrypt.Net.BCrypt.Verify(rawToken, rt.Token));
         }
 
-        public async Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(Guid userId, CancellationToken ct = default)
+        public async Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(
+            Guid userId, CancellationToken ct = default)
         {
-            return await _context.RefreshTokens.AsNoTracking()
-                .Where(rt => rt.UserId == userId && rt.ExpiresAt > DateTime.UtcNow)
+            return await _context.RefreshTokens
+                .Where(rt => rt.UserId == userId && rt.ExpiresAt > DateTime.UtcNow && !rt.IsRevoked)
                 .ToListAsync(ct);
         }
     }

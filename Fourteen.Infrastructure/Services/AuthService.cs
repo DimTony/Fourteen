@@ -41,17 +41,18 @@ namespace Fourteen.Infrastructure.Services
 
         public string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride)
         {
-            var redirectUri = _config["GitHub:RedirectUri"] ?? string.Empty;
+            var serverRedirectUri = _config["GitHub:RedirectUri"] ?? string.Empty;
 
-            _memoryCache.Set($"oauth:{state}", new OAuthState(codeChallenge, callbackOverride), 
-                    TimeSpan.FromMinutes(10));
+            _memoryCache.Set($"oauth:{state}", new OAuthState(codeChallenge, callbackOverride),
+                TimeSpan.FromMinutes(10));
 
-            var redirect = callbackOverride ?? redirectUri;
+            var redirectForGithub = callbackOverride ?? serverRedirectUri;
 
-            return _github.BuildAuthUrl(state, redirect);
+            return _github.BuildAuthUrl(state, redirectForGithub);
         }
 
-        public async Task<Result<CallbackResult>> HandleCallback(string code, string state, string? codeVerifier, CancellationToken ct)
+        public async Task<Result<CallbackResult>> HandleCallback(
+            string code, string state, string? codeVerifier, CancellationToken ct)
         {
             var oauthState = _memoryCache.Get<OAuthState>($"oauth:{state}");
             if (oauthState is null)
@@ -65,16 +66,18 @@ namespace Fourteen.Infrastructure.Services
                 var expectedChallenge = Base64UrlEncode(
                     SHA256.HashData(Encoding.ASCII.GetBytes(codeVerifier)));
 
-                if (expectedChallenge != oauthState.CodeChallenge)
+                if (!string.Equals(expectedChallenge, oauthState.CodeChallenge,
+                        StringComparison.Ordinal))
                     return Result.Failure<CallbackResult>("PKCE validation failed");
             }
 
-            var redirectUri = oauthState.CliCallback ?? string.Empty;
+            var serverRedirectUri = _config["GitHub:RedirectUri"] ?? string.Empty;
+            var redirectUri = oauthState.CliCallback ?? serverRedirectUri;
 
             var githubUser = await _github.ExchangeCodeAsync(code, redirectUri, ct);
 
-            var user = await _userRepo.FindByGithubId(githubUser.Id);
-            
+            var user = await _userRepo.FindByGithubId(githubUser.Id, ct);
+
             if (user == null)
             {
                 user = User.Create(
@@ -83,14 +86,13 @@ namespace Fourteen.Infrastructure.Services
                     githubUser.Email ?? string.Empty,
                     githubUser.AvatarUrl);
 
-                await _userRepo.AddAsync(user);
+                await _userRepo.AddAsync(user, ct);
             }
 
             if (!user.IsActive)
                 return Result.Failure<CallbackResult>("Account is deactivated");
 
             user.RecordLogin();
-
             await _unitOfWork.SaveChangesAsync(ct);
 
             var tokenPair = await IssueTokenPairAsync(user, ct);
