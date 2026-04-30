@@ -35,8 +35,18 @@ namespace Fourteen.API.Middleware
             }
             catch (UnparsableQueryException ex)
             {
-                _logger.LogInformation(ex, "Try: 'young males', 'adult females from Kenya', 'teenagers above 17'");
+                _logger.LogInformation(ex, "Try: 'young males', 'adult females from Kenya'");
                 await WriteError(ctx, 400, ex.Message);
+            }
+            catch (UnauthorizedException ex)         
+            {
+                _logger.LogWarning(ex, "Unauthorized");
+                await WriteError(ctx, 401, ex.Message);
+            }
+            catch (ForbiddenException ex)            
+            {
+                _logger.LogWarning(ex, "Forbidden");
+                await WriteError(ctx, 403, ex.Message);
             }
             catch (UpstreamApiException ex)
             {
