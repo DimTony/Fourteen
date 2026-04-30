@@ -44,97 +44,6 @@ namespace Fourteen.API.Controllers
             return Redirect(redirectUrl);
         }
 
-        [HttpGet("github/callback")]
-        public async Task<IActionResult> GithubCallback(
-            [FromQuery] string code,
-            [FromQuery] string state,
-            [FromQuery] string? code_verifier,
-            CancellationToken ct)
-        {
-            if (string.IsNullOrWhiteSpace(code))
-            {
-                return BadRequest(new { status = "error", message = "Missing authorization code" });
-            }
-
-            if (string.IsNullOrWhiteSpace(state))
-            {
-                return BadRequest(new { status = "error", message = "Missing state parameter" });
-            }
-
-            var result = await _authService.HandleCallback(code, state, code_verifier, ct);
-
-            if (result.IsFailure)
-            {
-                return Unauthorized(new
-                {
-                    status = "error",
-                    message = result.Error
-                });
-            }
-
-            var (tokenPair, cliCallback) = result.Value;
-
-            if (!string.IsNullOrWhiteSpace(cliCallback))
-            {
-                return Ok(new
-                {
-                    status = "success",
-                    access_token = tokenPair.AccessToken,
-                    refresh_token = tokenPair.RefreshToken,
-                    username = tokenPair.Username,
-                    avatar_url = tokenPair.AvatarUrl
-                });
-            }
-
-            AppendAuthCookies(tokenPair);
-
-            return Ok(new
-            {
-                status = "success",
-                message = "Logged in successfully",
-                data = new
-                {
-                    username = tokenPair.Username,
-                    avatar_url = tokenPair.AvatarUrl,
-                    role = tokenPair.Role
-                }
-            });
-
-        }
-    
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh(
-            [FromBody] RefreshRequest? body,
-            CancellationToken ct)
-        {
-            var rawToken = body?.RefreshToken
-                        ?? Request.Cookies["refresh_token"];
-
-            if (string.IsNullOrWhiteSpace(rawToken))
-                return BadRequest(new { status = "error", message = "Missing refresh token" });
-
-            var result = await _authService.Refresh(rawToken, ct);
-
-            if (result.IsFailure)
-                return Unauthorized(new { status = "error", message = result.Error });
-
-            var tokenPair = result.Value;
-
-         
-            if (Request.Cookies.ContainsKey("refresh_token"))
-            {
-                AppendAuthCookies(tokenPair);
-                return Ok(new { status = "success" });
-            }
-
-            return Ok(new
-            {
-                status        = "success",
-                access_token  = tokenPair.AccessToken,
-                refresh_token = tokenPair.RefreshToken
-            });
-        }
-
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout(
@@ -175,39 +84,121 @@ namespace Fourteen.API.Controllers
             });
         }
 
+        [HttpGet("github/callback")]
+        public async Task<IActionResult> GithubCallback(
+            [FromQuery] string code,
+            [FromQuery] string state,
+            [FromQuery] string? code_verifier,
+            CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return BadRequest(new { status = "error", message = "Missing authorization code" });
+
+            if (string.IsNullOrWhiteSpace(state))
+                return BadRequest(new { status = "error", message = "Missing state parameter" });
+
+            var result = await _authService.HandleCallback(code, state, code_verifier, ct);
+
+            if (result.IsFailure)
+                return Unauthorized(new { status = "error", message = result.Error });
+
+            var (tokenPair, cliCallback) = result.Value;
+
+            // CLI flow — return tokens in the JSON body so the CLI can persist them.
+            if (!string.IsNullOrWhiteSpace(cliCallback))
+            {
+                return Ok(new
+                {
+                    status        = "success",
+                    access_token  = tokenPair.AccessToken,
+                    refresh_token = tokenPair.RefreshToken,
+                    username      = tokenPair.Username,
+                    avatar_url    = tokenPair.AvatarUrl
+                });
+            }
+
+            // Web flow — deliver tokens via HttpOnly cookies and expose a CSRF token.
+            AppendAuthCookies(tokenPair);
+
+            return Ok(new
+            {
+                status = "success",
+                message = "Logged in successfully",
+                data = new
+                {
+                    username   = tokenPair.Username,
+                    avatar_url = tokenPair.AvatarUrl,
+                    role       = tokenPair.Role
+                }
+            });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(
+            [FromBody] RefreshRequest? body,
+            CancellationToken ct)
+        {
+            var rawToken = body?.RefreshToken
+                        ?? Request.Cookies["refresh_token"];
+
+            if (string.IsNullOrWhiteSpace(rawToken))
+                return BadRequest(new { status = "error", message = "Missing refresh token" });
+
+            var result = await _authService.Refresh(rawToken, ct);
+
+            if (result.IsFailure)
+                return Unauthorized(new { status = "error", message = result.Error });
+
+            var tokenPair = result.Value;
+
+            // If the original request used cookies, refresh via cookies too.
+            if (Request.Cookies.ContainsKey("refresh_token"))
+            {
+                AppendAuthCookies(tokenPair);
+                return Ok(new { status = "success" });
+            }
+
+            // Otherwise (CLI / API clients) return tokens in the body.
+            return Ok(new
+            {
+                status        = "success",
+                access_token  = tokenPair.AccessToken,
+                refresh_token = tokenPair.RefreshToken
+            });
+        }
+
         private void AppendAuthCookies(TokenPair tokenPair)
         {
-            var secure  = !_config.GetValue<bool>("App:IsDevelopment");
-
+            // Access token: 3 minutes (matches JWT expiry)
             Response.Cookies.Append("access_token", tokenPair.AccessToken, new CookieOptions
             {
                 HttpOnly = true,
                 SameSite = SameSiteMode.None,
-                Secure = true,
+                Secure   = true,
                 Path     = "/",
-                Expires = DateTimeOffset.UtcNow.AddMinutes(3)
+                Expires  = DateTimeOffset.UtcNow.AddMinutes(3)
             });
 
+            // Refresh token: 5 minutes (matches RefreshToken.Create)
             Response.Cookies.Append("refresh_token", tokenPair.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
                 SameSite = SameSiteMode.None,
-                Secure = true,
+                Secure   = true,
                 Path     = "/",
-                Expires = DateTimeOffset.UtcNow.AddMinutes(5)
+                Expires  = DateTimeOffset.UtcNow.AddMinutes(5)
             });
 
             var csrfToken = GenerateCsrfToken();
             Response.Cookies.Append("csrf_token", csrfToken, new CookieOptions
             {
-                HttpOnly = false,
+                HttpOnly = false,          // Must be readable by JS
                 SameSite = SameSiteMode.None,
-                Secure = true,
+                Secure   = true,
                 Path     = "/",
                 Expires  = DateTimeOffset.UtcNow.AddMinutes(3)
             });
         }
-
         private static string GenerateCsrfToken()
         {
             var bytes = new byte[32];
