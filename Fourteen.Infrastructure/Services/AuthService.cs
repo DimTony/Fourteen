@@ -108,7 +108,9 @@ namespace Fourteen.Infrastructure.Services
   
         public async Task<Result<TokenPair>> Refresh(string rawRefreshToken, CancellationToken ct)
         {
-            var stored = await _refreshTokenRepo.FindValidByUser(rawRefreshToken, ct);
+            var decodedToken = Uri.UnescapeDataString(rawRefreshToken);
+            
+            var stored = await _refreshTokenRepo.FindValidByUser(decodedToken, ct);
 
             if (stored is null)
                 return Result.Failure<TokenPair>("Invalid or expired refresh token");
@@ -129,7 +131,10 @@ namespace Fourteen.Infrastructure.Services
 
         public async Task RevokeRefreshToken(string rawRefreshToken, CancellationToken ct)
         {
-            var stored = await _refreshTokenRepo.FindValidByUser(rawRefreshToken, ct);
+            // Decode the refresh token in case it's URL-encoded
+            var decodedToken = Uri.UnescapeDataString(rawRefreshToken);
+            
+            var stored = await _refreshTokenRepo.FindValidByUser(decodedToken, ct);
 
             if (stored != null)
             {
