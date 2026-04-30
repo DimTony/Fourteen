@@ -130,7 +130,7 @@
         },
         {
           "name": "RateLimiting__Auth__PermitLimit",
-          "value": "5"
+          "value": "10"
         },
         {
           "name": "RateLimiting__Auth__WindowSeconds",
@@ -138,7 +138,7 @@
         },
         {
           "name": "RateLimiting__Api__PermitLimit",
-          "value": "100"
+          "value": "60"
         },
         {
           "name": "RateLimiting__Api__WindowSeconds",
