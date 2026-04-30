@@ -30,19 +30,6 @@ namespace Fourteen.API.Controllers
             _logger = logger;
         }
 
-        [HttpGet("github")]
-        public IActionResult RedirectToGithub(
-            [FromQuery] string? code_challenge,
-            [FromQuery] string? state,
-            [FromQuery] string? cli_callback)
-        {
-            var resolvedState = state ?? Guid.NewGuid().ToString("N");
-
-            var redirectUrl = _authService.BuildGithubRedirectUrl(
-                code_challenge, resolvedState, cli_callback);
-
-            return Redirect(redirectUrl);
-        }
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout(
@@ -82,53 +69,64 @@ namespace Fourteen.API.Controllers
             });
         }
 
+        [HttpGet("github")]
+        public IActionResult RedirectToGithub(
+            [FromQuery] string state,
+            [FromQuery] string flow = "web")
+        {
+            var redirectUrl = _authService.BuildGithubRedirectUrl(state, flow);
+
+            return Redirect(redirectUrl);
+        }
+
         [HttpGet("github/callback")]
         public async Task<IActionResult> GithubCallback(
             [FromQuery] string code,
             [FromQuery] string state,
-            [FromQuery] string? code_verifier,
             CancellationToken ct)
         {
+
             if (string.IsNullOrWhiteSpace(code))
-                return BadRequest(new { status = "error", message = "Missing authorization code" });
-
-            if (string.IsNullOrWhiteSpace(state))
-                return BadRequest(new { status = "error", message = "Missing state parameter" });
-
-            var result = await _authService.HandleCallback(code, state, code_verifier, ct);
-
-            if (result.IsFailure)
-                return Unauthorized(new { status = "error", message = result.Error });
-
-            var (tokenPair, cliCallback) = result.Value;
-
-            // CLI flow — return tokens in the JSON body so the CLI can persist them.
-            if (!string.IsNullOrWhiteSpace(cliCallback))
             {
-                return Ok(new
-                {
-                    status        = "success",
-                    access_token  = tokenPair.AccessToken,
-                    refresh_token = tokenPair.RefreshToken,
-                    username      = tokenPair.Username,
-                    avatar_url    = tokenPair.AvatarUrl
-                });
+                return BadRequest(new { status = "error", message = "Missing authorization code" });
             }
 
-            // Web flow — deliver tokens via HttpOnly cookies and expose a CSRF token.
+            if (string.IsNullOrWhiteSpace(state))
+            {
+                return BadRequest(new { status = "error", message = "Missing state parameter" });
+            }
+
+            var result = await _authService.HandleCallback(code, state, ct);
+
+            if (result.IsFailure)
+            {
+                return Unauthorized(new { status = "error", message = result.Error });
+            }
+
+            var (tokenPair, oAuthState) = result.Value;
+
+            if (!string.IsNullOrWhiteSpace(oAuthState.Flow) && oAuthState.Flow == "cli")
+            {
+                var cliRedirectUrl = QueryHelpers.AddQueryString(_config["GitHub:CliCallbackUri"]!, new Dictionary<string, string?>
+                {
+                    ["access_token"] = tokenPair.AccessToken,
+                    ["refresh_token"] = tokenPair.RefreshToken,
+                    ["username"] = tokenPair.Username,
+                    ["avatar_url"] = tokenPair.AvatarUrl,
+                    ["state"] = oAuthState.State
+                });
+
+                return Redirect(cliRedirectUrl);
+            }
+
             AppendAuthCookies(tokenPair);
 
-            return Ok(new
-            {
-                status = "success",
-                message = "Logged in successfully",
-                data = new
+            var webRedirectUrl = QueryHelpers.AddQueryString(_config["GitHub:WebCallbackUri"]!, new Dictionary<string, string?>
                 {
-                    username   = tokenPair.Username,
-                    avatar_url = tokenPair.AvatarUrl,
-                    role       = tokenPair.Role
-                }
-            });
+                    ["state"] = oAuthState.State
+                });
+
+            return Redirect(webRedirectUrl);
         }
 
         [HttpPost("refresh")]
