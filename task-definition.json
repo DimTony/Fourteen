@@ -25,10 +25,7 @@
         }
       ],
       "healthCheck": {
-        "command": [
-          "CMD-SHELL",
-          "curl -f http://localhost:8080/health || exit 1"
-        ],
+       "command": ["CMD-SHELL", "curl -f http://localhost:8080/api/health || exit 1"],
         "interval": 30,
         "timeout": 5,
         "retries": 3,
@@ -96,6 +93,10 @@
           "value": "false"
         },
         {
+          "name": "Features__GetDashboardStats",
+          "value": "true"
+        },
+        {
           "name": "Jwt__Issuer",
           "value": "FourteenAPI"
         },
@@ -109,7 +110,7 @@
         },
         {
           "name": "GitHub__RedirectUri",
-          "value": "https://your-domain.com/api/auth/github/callback"
+          "value": "https://fourteen-web.vercel.app/callback"
         },
         {
           "name": "GitHub__GithubAuthUrl",
@@ -145,7 +146,7 @@
         },
         {
           "name": "App__AllowedOrigins",
-          "value": "http://localhost:3000,https://your-domain.com"
+          "value": "https://fourteen-web.vercel.app"
         }
       ],
       "secrets": [
