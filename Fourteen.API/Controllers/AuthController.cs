@@ -45,7 +45,6 @@ namespace Fourteen.API.Controllers
         }
 
         [HttpPost("logout")]
-        [Authorize]
         public async Task<IActionResult> Logout(
             [FromBody] LogoutRequest? body,
             CancellationToken ct)
@@ -62,7 +61,6 @@ namespace Fourteen.API.Controllers
 
             return Ok(new { status = "success", message = "Logged out successfully" });
         }
-
     
         [HttpGet("me")]
         [Authorize]

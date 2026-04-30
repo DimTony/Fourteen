@@ -210,6 +210,31 @@ namespace Fourteen.API.Extensions
                             context.Token = context.Request.Cookies["access_token"];
                         }
                         return Task.CompletedTask;
+                    },
+                    
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = 401;
+                        context.Response.ContentType = "application/json";
+                        var body = System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            status = "error",
+                            message = context.ErrorDescription ?? "Unauthorized"
+                        });
+                        await context.Response.WriteAsync(body);
+                    },
+
+                    OnForbidden = async context =>
+                    {
+                        context.Response.StatusCode = 403;
+                        context.Response.ContentType = "application/json";
+                        var body = System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            status = "error",
+                            message = "Forbidden"
+                        });
+                        await context.Response.WriteAsync(body);
                     }
                 };
             });

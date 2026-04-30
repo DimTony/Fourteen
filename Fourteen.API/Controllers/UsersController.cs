@@ -25,6 +25,27 @@ namespace Fourteen.API.Controllers
             _logger = logger;
         }
 
+        [HttpGet("me")]
+        [Authorize]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+        public IActionResult WhoAmI()
+        {
+            var claims = User.Claims.ToDictionary(c => c.Type, c => c.Value);
+            return Ok(new
+            {
+                status = "success",
+                data = new
+                {
+                    id         = claims.GetValueOrDefault(ClaimTypes.NameIdentifier),
+                    username   = claims.GetValueOrDefault(ClaimTypes.Name),
+                    email      = claims.GetValueOrDefault(ClaimTypes.Email),
+                    role       = claims.GetValueOrDefault(ClaimTypes.Role),
+                    avatar_url = claims.GetValueOrDefault("avatar_url")
+                }
+            });
+        }
+
         [HttpGet("Stats")]
         [ProducesResponseType(typeof(CreateProfileSuccessResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]

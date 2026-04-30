@@ -9,13 +9,19 @@ namespace Fourteen.API.Middleware
         {
             if (ctx.Request.Path.StartsWithSegments("/api"))
             {
-                if (!ctx.Request.Headers.TryGetValue("X-API-Version", out var version) 
+                if (ctx.Request.Path.StartsWithSegments("/api/health"))
+                {
+                    await next(ctx);
+                    return;
+                }
+
+                if (!ctx.Request.Headers.TryGetValue("X-API-Version", out var version)
                     || version != "1")
                 {
                     ctx.Response.StatusCode = 400;
-                    await ctx.Response.WriteAsJsonAsync(new { 
-                        status = "error", 
-                        message = "API version header required" 
+                    await ctx.Response.WriteAsJsonAsync(new {
+                        status = "error",
+                        message = "API version header required"
                     });
                     return;
                 }

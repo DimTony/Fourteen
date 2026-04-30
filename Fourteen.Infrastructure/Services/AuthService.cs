@@ -41,20 +41,24 @@ namespace Fourteen.Infrastructure.Services
 
         public string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride)
         {
+            var resolvedState = state ?? Guid.NewGuid().ToString("N");
             var serverRedirectUri = _config["GitHub:RedirectUri"] ?? string.Empty;
-
-            _memoryCache.Set($"oauth:{state}", new OAuthState(codeChallenge, callbackOverride),
+            
+            var encodedState = Uri.EscapeDataString(resolvedState);
+            
+            _memoryCache.Set($"oauth:{encodedState}", new OAuthState(codeChallenge, callbackOverride),
                 TimeSpan.FromMinutes(10));
 
             var redirectForGithub = callbackOverride ?? serverRedirectUri;
-
-            return _github.BuildAuthUrl(state, redirectForGithub);
+            return _github.BuildAuthUrl(encodedState, redirectForGithub);
         }
 
         public async Task<Result<CallbackResult>> HandleCallback(
             string code, string state, string? codeVerifier, CancellationToken ct)
         {
-            var oauthState = _memoryCache.Get<OAuthState>($"oauth:{state}");
+            var cacheKey = $"oauth:{Uri.EscapeDataString(state)}";
+            var oauthState = _memoryCache.Get<OAuthState>(cacheKey);
+            
             if (oauthState is null)
                 return Result.Failure<CallbackResult>("Invalid or expired state");
 
@@ -97,28 +101,28 @@ namespace Fourteen.Infrastructure.Services
 
             var tokenPair = await IssueTokenPairAsync(user, ct);
 
-            _memoryCache.Remove($"oauth:{state}");
+            _memoryCache.Remove(cacheKey);
 
             return Result.Success(new CallbackResult(tokenPair, oauthState.CliCallback));
         }
   
         public async Task<Result<TokenPair>> Refresh(string rawRefreshToken, CancellationToken ct)
         {
-            var stored = await _refreshTokenRepo.FindValidByUser(rawRefreshToken, ct)
-                ?? throw new UnauthorizedException("Invalid or expired refresh token");
+            var stored = await _refreshTokenRepo.FindValidByUser(rawRefreshToken, ct);
+
+            if (stored is null)
+                return Result.Failure<TokenPair>("Invalid or expired refresh token");
 
             stored.Revoke();
-
             await _unitOfWork.SaveChangesAsync(ct);
 
-            var user = await _userRepo.GetByIdAsync(new UserId(stored.UserId), ct)!;
+            var user = await _userRepo.GetByIdAsync(new UserId(stored.UserId), ct);
 
-            if (user == null)
-            {
+            if (user is null)
                 return Result.Failure<TokenPair>("Invalid or expired refresh token");
-            }
-            
-            if (!user.IsActive) return Result.Failure<TokenPair>("Account is deactivated");
+
+            if (!user.IsActive)
+                return Result.Failure<TokenPair>("Account is deactivated");
 
             return await IssueTokenPairAsync(user, ct);
         }

@@ -18,23 +18,22 @@ namespace Fourteen.API.Extensions
             }
 
             app.UseForwardedHeaders();
-
             app.UseHttpsRedirection();
 
-            app.UseRateLimiter();
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseMiddleware<RequestLoggingMiddleware>();
 
+            app.UseRateLimiter();
             app.UseCors();
+
+            app.UseMiddleware<ApiVersionMiddleware>();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseMiddleware<ExceptionHandlingMiddleware>();
-            app.UseMiddleware<RequestLoggingMiddleware>();
-            app.UseMiddleware<ApiVersionMiddleware>();
             app.UseMiddleware<CsrfValidationMiddleware>();
 
             app.MapControllers();
-
             return app;
         }
     }
