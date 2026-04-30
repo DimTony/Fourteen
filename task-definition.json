@@ -110,11 +110,11 @@
         },
         {
           "name": "GitHub__WebCallbackUri",
-          "value": "http://localhost:3000/dashboard"
+          "value": "http://localhost:3000/callback"
         },
         {
           "name": "GitHub__CliCallbackUri",
-          "value": "http://localhost:3000/callback"
+          "value": "http://localhost:9876/callback"
         },
         {
           "name": "GitHub__RedirectUri",
