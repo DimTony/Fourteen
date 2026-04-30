@@ -18,13 +18,18 @@ namespace Fourteen.API.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Only validate CSRF on state-changing requests (POST, PUT, DELETE, PATCH)
             if (context.Request.Method == HttpMethods.Post ||
                 context.Request.Method == HttpMethods.Put ||
                 context.Request.Method == HttpMethods.Delete ||
                 context.Request.Method == HttpMethods.Patch)
             {
-                // Skip CSRF validation for auth endpoints and health checks
+                var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                if (authHeader?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    await _next(context);
+                    return;
+                }
+
                 var path = context.Request.Path.Value ?? "";
                 if (path.StartsWith("/auth", StringComparison.OrdinalIgnoreCase) ||
                     path.StartsWith("/health", StringComparison.OrdinalIgnoreCase))
@@ -32,8 +37,6 @@ namespace Fourteen.API.Middleware
                     await _next(context);
                     return;
                 }
-
-                // Check if CSRF token is present in cookies
                 if (!context.Request.Cookies.ContainsKey("csrf_token"))
                 {
                     _logger.LogWarning("CSRF token missing from cookies for {Method} {Path}", 
@@ -49,7 +52,6 @@ namespace Fourteen.API.Middleware
 
                 var cookieToken = context.Request.Cookies["csrf_token"];
 
-                // Check for CSRF token in header
                 var headerToken = context.Request.Headers["X-CSRF-Token"].FirstOrDefault();
 
                 if (string.IsNullOrWhiteSpace(headerToken) || string.IsNullOrWhiteSpace(cookieToken))
@@ -65,7 +67,6 @@ namespace Fourteen.API.Middleware
                     return;
                 }
 
-                // Validate CSRF tokens match
                 if (!SecurityExtensions.ConstantTimeEquals(cookieToken, headerToken))
                 {
                     _logger.LogWarning("CSRF token mismatch for {Method} {Path}", 
@@ -86,9 +87,6 @@ namespace Fourteen.API.Middleware
 
     public static class SecurityExtensions
     {
-        /// <summary>
-        /// Compares two strings in constant time to prevent timing attacks
-        /// </summary>
         public static bool ConstantTimeEquals(string a, string b)
         {
             if (ReferenceEquals(a, b))

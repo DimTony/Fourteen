@@ -13,7 +13,7 @@ namespace Fourteen.API.Controllers
 {
     [ApiController]
     [EnableRateLimiting("api")]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
         private readonly IMediator mediator;
