@@ -33,7 +33,8 @@ namespace Fourteen.Infrastructure.Services
                 new Claim(ClaimTypes.Name,           user.Username),
                 new Claim(ClaimTypes.Email,          user.Email ?? ""),
                 new Claim(ClaimTypes.Role,           user.Role.ToString()),
-                new Claim("avatar_url",              user.AvatarUrl ?? "")
+                new Claim("avatar_url",              user.AvatarUrl ?? ""),
+                new Claim("github_id",               user.GithubId)
             };
 
             var token = new JwtSecurityToken(

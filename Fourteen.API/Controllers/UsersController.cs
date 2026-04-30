@@ -41,7 +41,8 @@ namespace Fourteen.API.Controllers
                     username   = claims.GetValueOrDefault(ClaimTypes.Name),
                     email      = claims.GetValueOrDefault(ClaimTypes.Email),
                     role       = claims.GetValueOrDefault(ClaimTypes.Role),
-                    avatar_url = claims.GetValueOrDefault("avatar_url")
+                    avatar_url = claims.GetValueOrDefault("avatar_url"),
+                    github_id  = claims.GetValueOrDefault("github_id")
                 }
             });
         }

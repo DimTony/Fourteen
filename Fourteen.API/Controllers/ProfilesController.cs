@@ -269,6 +269,32 @@ namespace Fourteen.API.Controllers
             };
             return Ok(response);
         }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status502BadGateway)]
+        public async Task<IActionResult> DeleteProfile(
+               [FromRoute] Guid id,
+               CancellationToken ct)
+        {
+            var result = await this.mediator.Send(new DeleteProfileCommand(id), ct);
+            if (result.IsFailure)
+            {
+                return NotFound(new ApiErrorResponse
+                {
+                    Status = "error",
+                    Message = result.Error
+                });
+            }
+            return NoContent();
+        }
+
         private OkObjectResult BuildJsonResult(ProfileFilterApiRequest request, PagedResult<ProfileDto> profilesResult)
         {
             var response = new GetProfilesSuccessResponse
