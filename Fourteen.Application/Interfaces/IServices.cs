@@ -17,17 +17,12 @@ namespace Fourteen.Application.Interfaces
     }
     public interface IAuthServices
     {
-        string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride);
-        Task<Result<CallbackResult>> HandleCallback(string code, string state, string? codeVerifier, CancellationToken ct);
+        string BuildGithubRedirectUrl(string state,string flow = "web");
+        Task<Result<CallbackResult>> HandleCallback(string code, string state, CancellationToken ct);
         Task<Result<TokenPair>> Refresh(string rawRefreshToken, CancellationToken ct);
         Task RevokeRefreshToken(string rawRefreshToken, CancellationToken ct);
 
 
-    }
-    public interface IGithubClient
-    {
-        string BuildAuthUrl(string state, string redirectUri);
-        Task<GithubUserDto> ExchangeCodeAsync(string code, string redirectUri, CancellationToken ct = default);
     }
     public interface IJwtService
     {
