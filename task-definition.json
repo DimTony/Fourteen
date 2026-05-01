@@ -109,14 +109,6 @@
           "value": "3"
         },
         {
-          "name": "GitHub__WebCallbackUri",
-          "value": "http://localhost:3000/dashboard"
-        },
-        {
-          "name": "GitHub__CliCallbackUri",
-          "value": "http://localhost:3000/callback"
-        },
-        {
           "name": "GitHub__RedirectUri",
           "value": "https://fourteen-web.vercel.app/callback"
         },

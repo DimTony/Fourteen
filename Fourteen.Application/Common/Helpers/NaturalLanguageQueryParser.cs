@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
 using Fourteen.Application.Common.DTOs;
 
-namespace Fourteen.Application.Helpers
+namespace Fourteen.Application.Common.Helpers
 {
     public class NaturalLanguageQueryParser
     {

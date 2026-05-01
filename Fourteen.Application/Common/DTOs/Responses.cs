@@ -468,7 +468,7 @@ namespace Fourteen.Application.Common.DTOs
     string AvatarUrl,
     string Role);
 
-    public record CallbackResult(TokenPair TokenPair, OAuthState OAuthState);
+    public record CallbackResult(TokenPair TokenPair, string? CliCallback);
 
     public sealed record GithubUserDto(
         string Id,

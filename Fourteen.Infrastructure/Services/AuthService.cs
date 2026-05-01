@@ -3,13 +3,10 @@ using Fourteen.Application.Interfaces;
 using Fourteen.Domain.Aggregates.Users;
 using Fourteen.Domain.Common;
 using Fourteen.Domain.Exceptions;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Security;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -17,7 +14,7 @@ namespace Fourteen.Infrastructure.Services
 {
     public class AuthServices : IAuthServices
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IGithubClient _github;
         private readonly IUserRepository _userRepo;
         private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly IJwtService _jwtService;
@@ -28,11 +25,11 @@ namespace Fourteen.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
 
 
-        public AuthServices(IHttpClientFactory httpClientFactory, IUserRepository userRepo, 
+        public AuthServices(IGithubClient github, IUserRepository userRepo, 
                          IRefreshTokenRepository refreshTokenRepo, IJwtService jwtService,
                          IMemoryCache memoryCache, ILogger<AuthServices> logger, IConfiguration config, IUnitOfWork unitOfWork)
         {
-            _httpClientFactory = httpClientFactory;
+            _github = github;
             _userRepo = userRepo;
             _refreshTokenRepo = refreshTokenRepo;
             _jwtService = jwtService;
@@ -42,140 +39,71 @@ namespace Fourteen.Infrastructure.Services
             _unitOfWork = unitOfWork;
         }
 
-        public string BuildGithubRedirectUrl(string state, string flow)
+        public string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride)
         {
-            // var state = Guid.NewGuid().ToString("N");
-            var (codeVerifier, codeChallenge) = PkceHelper.GeneratePkce();
-
-            _memoryCache.Set($"oauth:{state}", new OAuthState(state, flow, codeVerifier),
+            var resolvedState = state ?? Guid.NewGuid().ToString("N");
+            var serverRedirectUri = _config["GitHub:RedirectUri"] ?? string.Empty;
+            
+            var encodedState = Uri.EscapeDataString(resolvedState);
+            
+            _memoryCache.Set($"oauth:{encodedState}", new OAuthState(codeChallenge, callbackOverride),
                 TimeSpan.FromMinutes(10));
 
-            var redirectUri = _config["GitHub:RedirectUri"] ?? "http://localhost:5261/auth/github/callback";
-
-            var query = QueryHelpers.AddQueryString(_config["GitHub:GithubAuthUrl"]!,
-                new Dictionary<string, string?>
-                {
-                    ["client_id"]             = _config["GitHub:ClientId"]!,
-                    ["redirect_uri"]          = redirectUri,
-                    ["scope"]                 = "read:user user:email",
-                    ["state"]                 = state,
-                    ["code_challenge"]        = codeChallenge,
-                    ["code_challenge_method"] = "S256"
-                });
-
-            return query;
+            var redirectForGithub = callbackOverride ?? serverRedirectUri;
+            return _github.BuildAuthUrl(encodedState, redirectForGithub);
         }
 
-
         public async Task<Result<CallbackResult>> HandleCallback(
-            string code, string state, CancellationToken ct)
+            string code, string state, string? codeVerifier, CancellationToken ct)
         {
-            var oauthState = _memoryCache.Get<OAuthState>($"oauth:{state}");
-
-            if (oauthState is null)
-            {
-                return Result.Failure<CallbackResult>("Invalid or expired state");
-            }
-
-            if (string.IsNullOrWhiteSpace(oauthState.CodeVerifier))
-            {
-                return Result.Failure<CallbackResult>("Missing code verifier");
-            }
-
-            var client = _httpClientFactory.CreateClient();
-
-
-            var tokenRequest = new HttpRequestMessage(HttpMethod.Post,
-                _config["GitHub:GithubTokenUrl"]!);
-
-            tokenRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            tokenRequest.Content = JsonContent.Create(new
-            {
-                client_id     = _config["GitHub:ClientId"]!,
-                client_secret = _config["GitHub:ClientSecret"]!,
-                code          = code,
-                redirect_uri  = _config["GitHub:RedirectUri"]!,
-                code_verifier = oauthState.CodeVerifier
-            });
-
+            var cacheKey = $"oauth:{Uri.EscapeDataString(state)}";
+            var oauthState = _memoryCache.Get<OAuthState>(cacheKey);
             
-            var tokenResponse = await client.SendAsync(tokenRequest, ct);
+            if (oauthState is null)
+                return Result.Failure<CallbackResult>("Invalid or expired state");
 
-            if (!tokenResponse.IsSuccessStatusCode)
+            if (oauthState.CodeChallenge is not null)
             {
-                var errorBody = await tokenResponse.Content.ReadAsStringAsync(ct);
-                return Result.Failure<CallbackResult>($"GitHub token exchange failed: {errorBody}");
+                if (string.IsNullOrWhiteSpace(codeVerifier))
+                    return Result.Failure<CallbackResult>("Missing code verifier");
+
+                var expectedChallenge = Base64UrlEncode(
+                    SHA256.HashData(Encoding.ASCII.GetBytes(codeVerifier)));
+
+                if (!string.Equals(expectedChallenge, oauthState.CodeChallenge,
+                        StringComparison.Ordinal))
+                    return Result.Failure<CallbackResult>("PKCE validation failed");
             }
 
-            var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<GithubTokenResponse>(ct);
+            var serverRedirectUri = _config["GitHub:RedirectUri"] ?? string.Empty;
+            var redirectUri = oauthState.CliCallback ?? serverRedirectUri;
 
-            if (tokenResult is null || string.IsNullOrWhiteSpace(tokenResult.AccessToken))
-            {
-                return Result.Failure<CallbackResult>("GitHub did not return an access token");
-            }
+            var githubUser = await _github.ExchangeCodeAsync(code, redirectUri, ct);
 
-            var userRequest = new HttpRequestMessage(HttpMethod.Get,
-                _config["GitHub:GithubApiUrl"]!);
-
-            AttachGithubHeaders(userRequest, tokenResult.AccessToken);
-
-            var userResponse = await client.SendAsync(userRequest, ct);
-
-            userResponse.EnsureSuccessStatusCode();
-
-            var userResult = await userResponse.Content.ReadFromJsonAsync<GithubUserProfile>(ct);
-
-            if (userResult is null)
-            {
-                return Result.Failure<CallbackResult>("Failed to fetch GitHub user profile");
-            }
-
-            var emailRequest = new HttpRequestMessage(HttpMethod.Get,
-                _config["GitHub:GithubEmailsApiUrl"]!);
-
-            AttachGithubHeaders(emailRequest, tokenResult.AccessToken);
-
-            var emailsResponse = await client.SendAsync(emailRequest, ct);
-
-            if (!emailsResponse.IsSuccessStatusCode)
-            {
-                return Result.Failure<CallbackResult>("Failed to fetch GitHub user emails");
-            }
-
-            var githubEmails = await emailsResponse.Content
-                .ReadFromJsonAsync<List<GithubEmail>>(ct);
-
-            var userEmail = userResult.Email
-                ?? githubEmails?.FirstOrDefault(e => e.Primary && e.Verified)?.Email;
-
-            var user = await _userRepo.FindByGithubId(userResult.Id.ToString(), ct);
+            var user = await _userRepo.FindByGithubId(githubUser.Id, ct);
 
             if (user == null)
             {
                 user = User.Create(
-                    userResult.Id.ToString(),
-                    userResult.Login,
-                    userEmail ?? string.Empty,
-                    userResult.AvatarUrl ?? "");
+                    githubUser.Id,
+                    githubUser.Login,
+                    githubUser.Email ?? string.Empty,
+                    githubUser.AvatarUrl);
 
                 await _userRepo.AddAsync(user, ct);
             }
 
             if (!user.IsActive)
-            {
                 return Result.Failure<CallbackResult>("Account is deactivated");
-            }
 
             user.RecordLogin();
-
             await _unitOfWork.SaveChangesAsync(ct);
 
             var tokenPair = await IssueTokenPairAsync(user, ct);
 
-            _memoryCache.Remove($"oauth:{state}");
+            _memoryCache.Remove(cacheKey);
 
-            return Result.Success(new CallbackResult(tokenPair, oauthState));
+            return Result.Success(new CallbackResult(tokenPair, oauthState.CliCallback));
         }
   
         public async Task<Result<TokenPair>> Refresh(string rawRefreshToken, CancellationToken ct)
@@ -215,13 +143,6 @@ namespace Fourteen.Infrastructure.Services
             }
         }
 
-        private static void AttachGithubHeaders(HttpRequestMessage request, string accessToken)
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("InsightaLabs", "1.0"));
-        }
-
         private static string Base64UrlEncode(byte[] input)
         {
             var base64 = System.Convert.ToBase64String(input);
@@ -259,7 +180,6 @@ namespace Fourteen.Infrastructure.Services
             RandomNumberGenerator.Fill(bytes);
             return Convert.ToBase64String(bytes);
         }
-
        
     }
 }

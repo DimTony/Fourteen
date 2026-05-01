@@ -89,7 +89,7 @@ namespace Fourteen.Application.Common.DTOs
             Gender is null && AgeMin is null && AgeMax is null && CountryId is null;
     }
 
-    public record OAuthState(string State, string? Flow, string? CodeVerifier);
+    public record OAuthState(string? CodeChallenge, string? CliCallback);
 
     public class LogoutRequest
     {

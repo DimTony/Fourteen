@@ -1,5 +1,5 @@
 ﻿using Fourteen.Application.Common.Behaviors;
-using Fourteen.Application.Helpers;
+using Fourteen.Application.Common.Helpers;
 using Fourteen.Application.Interfaces;
 using Fourteen.Infrastructure.Persistence;
 using Fourteen.Infrastructure.Persistence.Repositories;
@@ -64,6 +64,7 @@ namespace Fourteen.Infrastructure;
             services.AddHttpContextAccessor();
             services.AddScoped<IServices, ExternalServices>();
             services.AddScoped<IAuthServices, AuthServices>();
+            services.AddScoped<IGithubClient, GithubService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddMemoryCache();
             services.AddScoped<NaturalLanguageQueryParser>();
