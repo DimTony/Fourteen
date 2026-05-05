@@ -1,6 +1,9 @@
 package com.fourteen.worker;
 
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -19,8 +22,22 @@ public class Worker {
         int port = Integer.parseInt(System.getenv().getOrDefault("REDIS_PORT", "6379"));
         String password = System.getenv().get("REDIS_PASSWORD");
 
+        LOGGER.info("REDIS_HOST=" + host + " REDIS_PORT=" + port);
+
+        // Connectivity pre-check - fail fast with a clear message
+        try (java.net.Socket socket = new java.net.Socket()) {
+            socket.connect(new java.net.InetSocketAddress(host, port), 5000);
+            LOGGER.info("TCP connectivity to Redis confirmed");
+        } catch (Exception e) {
+            LOGGER.severe("Cannot reach Redis at " + host + ":" + port + " - " + e.getMessage());
+            LOGGER.severe("Check: security groups, VPC peering, REDIS_HOST env var, ElastiCache subnet");
+            System.exit(1); // fail fast instead of looping forever
+        }
+
         LOGGER.info("Worker starting...");
         LOGGER.info("Connecting to Redis " + host + ":" + port);
+
+        
 
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(10);
@@ -30,9 +47,17 @@ public class Worker {
         poolConfig.setTestOnReturn(true);
         poolConfig.setTestWhileIdle(true);
 
-        JedisPool jedisPool = password != null 
-            ? new JedisPool(poolConfig, host, port, 2000, password)
-            : new JedisPool(poolConfig, host, port);
+        JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
+            .connectionTimeoutMillis(5000)   // time to establish TCP connection
+            .socketTimeoutMillis(0)          // 0 = no read timeout (required for brpop blocking)
+            .password(password)
+            .build();
+
+        JedisPool jedisPool = new JedisPool(
+            poolConfig,
+            new HostAndPort(host, port),
+            clientConfig
+        );
 
         try {
             consumeJobs(jedisPool);
