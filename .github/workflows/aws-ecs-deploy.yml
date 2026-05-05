@@ -17,7 +17,7 @@ env:
 
 jobs:
   build-and-test:
-    name: Build and Test
+    name: Build and Test C# API
     runs-on: ubuntu-latest
 
     steps:
@@ -44,7 +44,7 @@ jobs:
           echo "Docker image built successfully"
 
   deploy-to-ecs:
-    name: Deploy to ECS
+    name: Deploy C# API to ECS
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
