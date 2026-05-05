@@ -4,8 +4,9 @@ namespace Fourteen.Domain.Aggregates.Users
 {
     public class User : AggregateRoot<UserId>
     {
-        public string GithubId { get; private set; } = default!;
+        public string ProviderId { get; private set; } = default!;
         public string Username { get; private set; } = default!;
+        public string? Password { get; private set; }
         public string Email { get; private set; } = default!;
         public string AvatarUrl { get; private set; } = default!;
         public UserRole Role { get; private set; } = UserRole.analyst;
@@ -15,20 +16,42 @@ namespace Fourteen.Domain.Aggregates.Users
 
         private User() { }
 
-        public static User Create(string githubId, string username, string email, string avatarUrl)
+        public static User Create(string providerId, string username, string email, string avatarUrl, UserRole role = UserRole.analyst, string? password = null)
             => new()
             {
                 Id = UserId.New(),
-                GithubId = githubId,
+                ProviderId = providerId,
                 Username = username,
                 Email = email,
                 AvatarUrl = avatarUrl,
-                Role = UserRole.analyst,
+                Role = role,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Password = password
             };
 
         public void RecordLogin() => LastLoginAt = DateTime.UtcNow;
         public void Deactivate() => IsActive = false;
+
+        public bool VerifyPassword(string password)
+        {
+            if (Password == null)
+                return false;
+
+            return BCrypt.Net.BCrypt.Verify(password, Password);
+        }
+
+        public void UpdateProfile(string? username, string? avatarUrl)
+        {
+            if (!string.IsNullOrEmpty(username) && Username != username)
+            {
+                Username = username;
+            }
+
+            if (!string.IsNullOrEmpty(avatarUrl) && AvatarUrl != avatarUrl)
+            {
+                AvatarUrl = avatarUrl;
+            }
+        }
     }
 }

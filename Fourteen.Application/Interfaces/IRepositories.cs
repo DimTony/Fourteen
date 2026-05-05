@@ -2,12 +2,15 @@
 using Fourteen.Domain.Common;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
 using Fourteen.Application.Common.DTOs;
+using DomainEntity = Fourteen.Domain.Aggregates.Domains.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Fourteen.Domain.Aggregates.Users;
+using Fourteen.Application.Features.Domains.Queries.GetDomains;
+using Fourteen.Domain.Aggregates.Domains;
 
 namespace Fourteen.Application.Interfaces
 {
@@ -24,8 +27,8 @@ namespace Fourteen.Application.Interfaces
     public interface IUserRepository
         : IRepository<User, UserId>
     {
-        Task<User?> FindByGithubId(string githubId, CancellationToken ct = default);
-
+        Task<User?> FindByEmail(string email, CancellationToken ct = default);
+        Task<User?> FindByProviderId(string providerId, CancellationToken ct = default);
         Task<MetricDto> GetUserGrowthAsync(CancellationToken ct = default);
     }
 
@@ -36,4 +39,24 @@ namespace Fourteen.Application.Interfaces
 
         Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(Guid userId, CancellationToken ct = default);
     } 
+
+    public interface IDomainRepository 
+        : IRepository<DomainEntity, DomainId>
+    {
+        Task<DomainEntity?> GetByNameAndUser(UserId userId, string name, CancellationToken ct = default);
+        Task<(IReadOnlyList<DomainEntity>, int)> GetPaged(GetDomainsQuery q, CancellationToken ct = default);
+
+    }
+
+    public interface IScanRepository
+        : IRepository<Scan, ScanId>
+    {
+        Task<IReadOnlyList<Scan>> GetActiveByDomain(DomainId domainId, CancellationToken ct = default);
+    }
+
+    public interface IFindingRepository
+        : IRepository<Finding, FindingId>
+    {
+        // Task<IReadOnlyList<Scan>> GetActiveByDomain(DomainId domainId, CancellationToken ct = default);
+    }
 }

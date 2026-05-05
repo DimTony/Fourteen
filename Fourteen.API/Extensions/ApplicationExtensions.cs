@@ -21,6 +21,7 @@ namespace Fourteen.API.Extensions
             app.UseHttpsRedirection();
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseMiddleware<ResponseLoggingMiddleware>();
             app.UseMiddleware<RequestLoggingMiddleware>();
 
             app.UseRateLimiter();
