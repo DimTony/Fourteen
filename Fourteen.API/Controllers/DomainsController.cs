@@ -4,6 +4,7 @@ using Fourteen.Application.Common.DTOs;
 using Fourteen.Application.Features.Authentication.Commands.UpdateUser;
 using Fourteen.Application.Features.Domains.Commands.AddDomain;
 using Fourteen.Application.Features.Domains.Commands.DeleteDomain;
+using Fourteen.Application.Features.Domains.Commands.StartScan;
 using Fourteen.Application.Features.Domains.Commands.VerifyDomain;
 using Fourteen.Application.Features.Domains.Queries.GetDomainById;
 using Fourteen.Application.Features.Domains.Queries.GetDomains;
@@ -193,6 +194,32 @@ namespace Fourteen.API.Controllers
             };
 
             return Ok(response);
+        }
+
+        [HttpPost("{domainId:guid}/scans")]
+        [Authorize(Policy = "AnalystOnly")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> StartScan(
+            [FromBody] StartScanCommand command,
+            CancellationToken ct)
+        {
+            var result = await this.mediator.Send(command, ct);
+
+            if (result.IsFailure)
+            {
+                return BadRequest(new { status = "error", message = result.Error });
+            }
+
+            var scan = result.Value;
+            var response = new ApiResponse<ScanDto>
+            {
+                Status = "success", 
+                Message = "Scan started successfully",
+                Data = scan
+            };
+
+            return Created($"api/scans/{scan.Id}", response);
         }
 
     }
