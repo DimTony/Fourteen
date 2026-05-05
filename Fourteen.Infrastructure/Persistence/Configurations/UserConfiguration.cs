@@ -17,11 +17,11 @@ namespace Fourteen.Infrastructure.Persistence.Configurations
                 .HasConversion(id => id.Value, v => new UserId(v))
                 .HasColumnName("id");
 
-            builder.Property(p => p.GithubId)
+            builder.Property(p => p.ProviderId)
                 .IsRequired()
                 .HasMaxLength(255)
-                .HasColumnName("github_id");
-            builder.HasIndex(p => p.GithubId).IsUnique();
+                .HasColumnName("provider_id");
+            builder.HasIndex(p => p.ProviderId).IsUnique();
 
             builder.Property(p => p.Username)
                 .IsRequired()
@@ -38,6 +38,10 @@ namespace Fourteen.Infrastructure.Persistence.Configurations
             builder.Property(p => p.AvatarUrl)
                 .IsRequired()
                 .HasColumnName("avatar_url");
+
+            builder.Property(p => p.Password)
+                .IsRequired()
+                .HasColumnName("password_hash");
 
             builder.Property(p => p.Role)
                 .IsRequired()

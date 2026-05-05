@@ -1,6 +1,9 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Fourteen.Application.Common.DTOs;
+using Fourteen.Application.Features.Authentication.Commands.GoogleCallback;
+using Fourteen.Application.Features.Authentication.Commands.LoginUser;
+using Fourteen.Application.Features.Authentication.Commands.RegisterUser;
 using Fourteen.Application.Features.Profiles.Commands.CreateProfile;
 using Fourteen.Application.Features.Profiles.Commands.DeleteProfile;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
@@ -19,15 +22,116 @@ namespace Fourteen.API.Controllers
     [Route("[controller]")]
     public class AuthController : ControllerBase
     {
+        private readonly IMediator mediator;
         private readonly IAuthServices _authService;
         private readonly IConfiguration _config;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthServices authService, IConfiguration config, ILogger<AuthController> logger)
+        public AuthController(IMediator mediator, IAuthServices authService, IConfiguration config, ILogger<AuthController> logger)
         {
+            this.mediator = mediator;
             _authService = authService;
             _config = config;
             _logger = logger;
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(
+            [FromBody] RegisterUserCommand command,
+            CancellationToken ct)
+        {
+            var result = await this.mediator.Send(command, ct);
+
+            if (result.IsFailure)
+            {
+                return BadRequest(new { status = "error", message = result.Error });
+            }
+
+            var tokenPair = result.Value;
+
+            AppendAuthCookies(tokenPair);
+
+            // return Redirect(_config["Google:WebCallbackUri"]!);
+            return Ok(new AuthResponse 
+            { 
+                Status = "success", 
+                Message = "User registered successfully",
+                Data = new AuthTokenDto
+                {
+                    Username = tokenPair.Username,
+                    AvatarUrl = tokenPair.AvatarUrl,
+                    AccessToken = tokenPair.AccessToken,
+                    RefreshToken = tokenPair.RefreshToken,
+                }
+            });
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(
+            [FromBody] LoginUserCommand command,
+            CancellationToken ct)
+        {
+            var result = await this.mediator.Send(command, ct);
+
+            if (result.IsFailure)
+            {
+                return BadRequest(new { status = "error", message = result.Error });
+            }
+
+            var tokenPair = result.Value;
+
+            AppendAuthCookies(tokenPair);
+
+            // return Redirect(_config["Google:WebCallbackUri"]!);
+            return Ok(new AuthResponse 
+            { 
+                Status = "success", 
+                Message = "User registered successfully",
+                Data = new AuthTokenDto
+                {
+                    Username = tokenPair.Username,
+                    AvatarUrl = tokenPair.AvatarUrl,
+                    AccessToken = tokenPair.AccessToken,
+                    RefreshToken = tokenPair.RefreshToken,
+                }
+            });
+        }
+
+        [HttpGet("google")]
+        public IActionResult RedirectToGoogle()
+        {
+            
+            var redirectUrl = _authService.BuildGoogleRedirectUrl();
+
+            return Redirect(redirectUrl);
+        }
+
+        [HttpGet("google/callback")]
+        public async Task<IActionResult> GoogleCallback(
+             [FromQuery] string code,
+            [FromQuery] string state,
+            CancellationToken ct)
+        {
+            var requestId = HttpContext.TraceIdentifier;
+
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state))
+            {
+                return BadRequest(new { status = "error", message = "Missing authorization code or state" });
+            }
+
+            var result = await this.mediator.Send(new GoogleCallbackCommand(code, state), ct);
+
+            if (result.IsFailure)
+            {
+                return Unauthorized(new { status = "error", message = result.Error });
+            }
+
+            var tokenPair = result.Value;
+
+            AppendAuthCookies(tokenPair);
+
+            return Redirect(_config["Google:WebCallbackUri"]!);
+
         }
 
         [HttpGet("github")]
@@ -61,7 +165,7 @@ namespace Fourteen.API.Controllers
 
             return Ok(new { status = "success", message = "Logged out successfully" });
         }
-    
+
         [HttpGet("me")]
         [Authorize]
         public IActionResult WhoAmI()
@@ -71,12 +175,12 @@ namespace Fourteen.API.Controllers
             return Ok(new
             {
                 status = "success",
-                data   = new
+                data = new
                 {
-                    id         = claims.GetValueOrDefault(ClaimTypes.NameIdentifier),
-                    username   = claims.GetValueOrDefault(ClaimTypes.Name),
-                    email      = claims.GetValueOrDefault(ClaimTypes.Email),
-                    role       = claims.GetValueOrDefault(ClaimTypes.Role),
+                    id = claims.GetValueOrDefault(ClaimTypes.NameIdentifier),
+                    username = claims.GetValueOrDefault(ClaimTypes.Name),
+                    email = claims.GetValueOrDefault(ClaimTypes.Email),
+                    role = claims.GetValueOrDefault(ClaimTypes.Role),
                     avatar_url = claims.GetValueOrDefault("avatar_url")
                 }
             });
@@ -107,11 +211,11 @@ namespace Fourteen.API.Controllers
             {
                 return Ok(new
                 {
-                    status        = "success",
-                    access_token  = tokenPair.AccessToken,
+                    status = "success",
+                    access_token = tokenPair.AccessToken,
                     refresh_token = tokenPair.RefreshToken,
-                    username      = tokenPair.Username,
-                    avatar_url    = tokenPair.AvatarUrl
+                    username = tokenPair.Username,
+                    avatar_url = tokenPair.AvatarUrl
                 });
             }
 
@@ -124,9 +228,9 @@ namespace Fourteen.API.Controllers
                 message = "Logged in successfully",
                 data = new
                 {
-                    username   = tokenPair.Username,
+                    username = tokenPair.Username,
                     avatar_url = tokenPair.AvatarUrl,
-                    role       = tokenPair.Role
+                    role = tokenPair.Role
                 }
             });
         }
@@ -159,8 +263,8 @@ namespace Fourteen.API.Controllers
             // Otherwise (CLI / API clients) return tokens in the body.
             return Ok(new
             {
-                status        = "success",
-                access_token  = tokenPair.AccessToken,
+                status = "success",
+                access_token = tokenPair.AccessToken,
                 refresh_token = tokenPair.RefreshToken
             });
         }
@@ -172,9 +276,9 @@ namespace Fourteen.API.Controllers
             {
                 HttpOnly = true,
                 SameSite = SameSiteMode.None,
-                Secure   = true,
-                Path     = "/",
-                Expires  = DateTimeOffset.UtcNow.AddMinutes(3)
+                Secure = true,
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddMinutes(3)
             });
 
             // Refresh token: 5 minutes (matches RefreshToken.Create)
@@ -182,9 +286,9 @@ namespace Fourteen.API.Controllers
             {
                 HttpOnly = true,
                 SameSite = SameSiteMode.None,
-                Secure   = true,
-                Path     = "/",
-                Expires  = DateTimeOffset.UtcNow.AddMinutes(5)
+                Secure = true,
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddMinutes(5)
             });
 
             var csrfToken = GenerateCsrfToken();
@@ -192,9 +296,9 @@ namespace Fourteen.API.Controllers
             {
                 HttpOnly = false,          // Must be readable by JS
                 SameSite = SameSiteMode.None,
-                Secure   = true,
-                Path     = "/",
-                Expires  = DateTimeOffset.UtcNow.AddMinutes(3)
+                Secure = true,
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddMinutes(3)
             });
         }
         private static string GenerateCsrfToken()

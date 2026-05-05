@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Fourteen.Application.Common.DTOs;
+using Fourteen.Application.Features.Authentication.Commands.UpdateUser;
 using Fourteen.Application.Features.Users.Queries.GetDashboardStats;
 using Fourteen.Application.Interfaces;
 using MediatR;
@@ -44,6 +45,39 @@ namespace Fourteen.API.Controllers
                     avatar_url = claims.GetValueOrDefault("avatar_url"),
                     github_id  = claims.GetValueOrDefault("github_id")
                 }
+            });
+        }
+
+        [HttpPatch("me")]
+        [Authorize]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> UpdateProfile(
+            [FromBody] UpdateUserRequest request,
+            CancellationToken ct)
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                return Unauthorized(new { status = "error", message = "User not authenticated" });
+            }
+
+            var command = new UpdateUserCommand(Guid.Parse(userIdClaim.Value), request);
+
+            var result = await this.mediator.Send(command, ct);
+
+            if (result.IsFailure)
+            {
+                return BadRequest(new { status = "error", message = result.Error });
+            }
+
+            var tokenPair = result.Value;
+
+            return Ok(new 
+            { 
+                Status = "success", 
+                Message = "User updated successfully"
             });
         }
 
