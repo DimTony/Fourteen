@@ -6,7 +6,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-
+import javax.net.ssl.SSLSocketFactory;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,13 +25,18 @@ public class Worker {
         LOGGER.info("REDIS_HOST=" + host + " REDIS_PORT=" + port);
 
         // Connectivity pre-check - fail fast with a clear message
-        try (java.net.Socket socket = new java.net.Socket()) {
-            socket.connect(new java.net.InetSocketAddress(host, port), 5000);
-            LOGGER.info("TCP connectivity to Redis confirmed");
+        try {
+            javax.net.ssl.SSLSocketFactory sslFactory = 
+                (javax.net.ssl.SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault();
+            try (javax.net.ssl.SSLSocket socket = 
+                    (javax.net.ssl.SSLSocket) sslFactory.createSocket(host, port)) {
+                socket.setSoTimeout(5000);
+                LOGGER.info("TLS connectivity to Redis confirmed");
+            }
         } catch (Exception e) {
-            LOGGER.severe("Cannot reach Redis at " + host + ":" + port + " - " + e.getMessage());
-            LOGGER.severe("Check: security groups, VPC peering, REDIS_HOST env var, ElastiCache subnet");
-            System.exit(1); // fail fast instead of looping forever
+            LOGGER.severe("Cannot establish TLS connection to Redis at " + host + ":" + port);
+            LOGGER.severe("Cause: " + e.getMessage());
+            System.exit(1);
         }
 
         LOGGER.info("Worker starting...");
@@ -48,9 +53,10 @@ public class Worker {
         poolConfig.setTestWhileIdle(true);
 
         JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
-            .connectionTimeoutMillis(5000)   // time to establish TCP connection
-            .socketTimeoutMillis(0)          // 0 = no read timeout (required for brpop blocking)
+            .connectionTimeoutMillis(10_000)
+            .socketTimeoutMillis(0)          // must be 0 for brpop blocking
             .password(password)
+            .ssl(true)                       // ← this is what was missing
             .build();
 
         JedisPool jedisPool = new JedisPool(
