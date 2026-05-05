@@ -29,6 +29,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/fourteen-worker",
+          "awslogs-create-group": "true",
           "awslogs-region": "eu-north-1",
           "awslogs-stream-prefix": "ecs"
         }
