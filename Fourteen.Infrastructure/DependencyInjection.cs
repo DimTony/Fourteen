@@ -7,6 +7,7 @@ using Fourteen.Infrastructure.Persistence.Repositories;
 using Fourteen.Infrastructure.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
@@ -31,9 +32,11 @@ namespace Fourteen.Infrastructure;
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            var dbString = configuration.GetConnectionString("DefaultConnection");
-            var redisString = configuration.GetConnectionString("RedisConnection");
 
+
+
+            var dbString = configuration.GetConnectionString("DefaultConnection");
+  
             services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(dbString, sqlOptions =>
                 {
@@ -47,8 +50,19 @@ namespace Fourteen.Infrastructure;
             services.AddScoped<IReadDbContext>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            services.AddSingleton<IConnectionMultiplexer>(
-                ConnectionMultiplexer.Connect(redisString!));
+            var redisString = configuration.GetConnectionString("RedisConnection");
+            var disableRedis = configuration.GetValue<bool>("DisableRedis");
+
+            if (!disableRedis && !string.IsNullOrWhiteSpace(redisString))
+            {
+                var options = ConfigurationOptions.Parse(redisString);
+                options.AbortOnConnectFail = false;
+                options.ConnectRetry = 3;
+
+                services.AddSingleton<IConnectionMultiplexer>(
+                    ConnectionMultiplexer.Connect(options)
+                );
+            }
 
             services.AddScoped<IRedisService, RedisServices>();
 
