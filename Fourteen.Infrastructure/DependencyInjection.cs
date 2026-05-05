@@ -76,6 +76,8 @@ namespace Fourteen.Infrastructure;
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();    
             services.AddScoped<IDomainRepository, DomainRepository>();    
+            services.AddScoped<IScanRepository, ScanRepository>();    
+            services.AddScoped<IFindingRepository, FindingRepository>();    
 
             return services;
         }
