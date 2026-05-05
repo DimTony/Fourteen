@@ -1,9 +1,11 @@
+using Fourteen.Application.Common.DTOs;
 using Fourteen.Application.Interfaces;
 using Fourteen.Domain.Aggregates.Users;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Fourteen.Infrastructure.Services
@@ -34,7 +36,7 @@ namespace Fourteen.Infrastructure.Services
                 new Claim(ClaimTypes.Email,          user.Email ?? ""),
                 new Claim(ClaimTypes.Role,           user.Role.ToString()),
                 new Claim("avatar_url",              user.AvatarUrl ?? ""),
-                new Claim("github_id",               user.GithubId)
+                new Claim("provider_id",               user.ProviderId)
             };
 
             var token = new JwtSecurityToken(
@@ -45,6 +47,32 @@ namespace Fourteen.Infrastructure.Services
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public TokenPair IssueTokenPair(User user, CancellationToken ct)
+        {
+            var expiryInMinutes = _config["Jwt:ExpirationMinutes"];
+
+            if ( !int.TryParse(expiryInMinutes, out var expiry))
+                throw new Exception("JWT ExpirationMinutes is missing or invalid in configuration");
+
+            var accessToken = Generate(user, TimeSpan.FromMinutes(expiry));
+
+            var rawRefresh = GenerateSecureToken();
+
+            return new TokenPair(
+                AccessToken:  accessToken,
+                RefreshToken: rawRefresh,
+                Username:     user.Username,
+                AvatarUrl:    user.AvatarUrl,
+                Role:         user.Role.ToString());
+        }
+
+        private static string GenerateSecureToken()
+        {
+            var bytes = new byte[64];
+            RandomNumberGenerator.Fill(bytes);
+            return Convert.ToBase64String(bytes);
         }
     }
 }
