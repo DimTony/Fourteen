@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fourteen.ai.AiJobPublisher;
 import com.fourteen.model.ScanJob;
 import com.fourteen.model.ScanResult;
 import com.fourteen.orchestrator.ScanOrchestrator;
@@ -29,6 +30,9 @@ public class ScanJobConsumer {
     );
 
     private final ScanOrchestrator orchestrator = new ScanOrchestrator();
+    private final AiJobPublisher   aiJobPublisher = new AiJobPublisher();
+    // private final AiJobPublisher aiJobPublisher = new AiJobPublisher(new OpenAiAnalyzer());
+
     private final ObjectMapper mapper = new ObjectMapper()
         .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
@@ -91,6 +95,17 @@ public class ScanJobConsumer {
                         + " success=" + scanResult.getSuccess());
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, "Failed to publish result for scanId: " + job.getScanId(), e);
+                }
+
+                if (Boolean.TRUE.equals(scanResult.getSuccess())) {
+                    try {
+                        aiJobPublisher.publishInsights(scanResult, jedisPool);
+                    } catch (Exception e) {
+                        // AI enrichment failures must never affect the main scan pipeline
+                        LOGGER.log(Level.WARNING,
+                            "AI enrichment failed for scanId=" + job.getScanId()
+                            + " — raw result was already published", e);
+                    }
                 }
 
             } catch (Exception e) {
