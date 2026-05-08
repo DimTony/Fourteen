@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
+using Fourteen.Domain.Common;
 
 
 namespace Fourteen.Application.Common.DTOs

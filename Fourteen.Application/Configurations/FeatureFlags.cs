@@ -16,5 +16,17 @@ namespace Fourteen.Application.Configurations
         public const string DeleteProfile = "Features:DeleteProfile";
         public const string GetProfiles = "Features:GetProfiles";
         public const string SearchProfiles = "Features:SearchProfiles";
+        public const string GoogleAuth = "Features:GoogleAuth";
+        public const string UpdateUser = "Features:UpdateUser";
+        public const string RegisterUser = "Features:RegisterUser";
+        public const string LoginUser = "Features:LoginUser";
+        public const string GetDomains = "Features:GetDomains";
+        public const string GetDomainById = "Features:GetDomainById";
+        public const string DeleteDomain = "Features:DeleteDomain";        
+        public const string VerifyDomain = "Features:VerifyDomain";    
+        public const string StartScan = "Features:StartScan";    
+        public const string ProcessScanResult = "Features:ProcessScanResult";    
+            
+        public const string AddDomain = "Features:AddDomain";
     }
 }

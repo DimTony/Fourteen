@@ -1,4 +1,5 @@
-﻿using Fourteen.Application.Common.Behaviors;
+﻿using DnsClient;
+using Fourteen.Application.Common.Behaviors;
 using Fourteen.Application.Common.Helpers;
 using Fourteen.Application.Interfaces;
 using Fourteen.Infrastructure.Persistence;
@@ -6,8 +7,10 @@ using Fourteen.Infrastructure.Persistence.Repositories;
 using Fourteen.Infrastructure.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace Fourteen.Infrastructure;
 
@@ -30,7 +33,6 @@ namespace Fourteen.Infrastructure;
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
 
           services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString, sqlOptions =>
@@ -49,12 +51,24 @@ namespace Fourteen.Infrastructure;
                         maxRetryDelay: TimeSpan.FromSeconds(15),
                         errorNumbersToAdd: null);
     
-                    sqlOptions.CommandTimeout(120);
                 }),
                 ServiceLifetime.Scoped);
 
             services.AddScoped<IReadDbContext>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            var redisString = configuration.GetConnectionString("RedisConnection");
+            var disableRedis = configuration.GetValue<bool>("DisableRedis");
+
+                options.AbortOnConnectFail = false;
+                options.ConnectRetry = 3;
+
+                services.AddSingleton<IConnectionMultiplexer>(
+                    ConnectionMultiplexer.Connect(options)
+                );
+            }
+
+            services.AddScoped<IRedisService, RedisServices>();
 
             return services;
         }
@@ -65,6 +79,9 @@ namespace Fourteen.Infrastructure;
             services.AddScoped<IProfileRepository, ProfileRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();    
+            services.AddScoped<IDomainRepository, DomainRepository>();    
+            services.AddScoped<IScanRepository, ScanRepository>();    
+            services.AddScoped<IFindingRepository, FindingRepository>();    
 
             return services;
         }
@@ -94,6 +111,21 @@ namespace Fourteen.Infrastructure;
             services.AddScoped<IAuthServices, AuthServices>();
             services.AddScoped<IGithubClient, GithubService>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddSingleton<LookupClient>(_ =>
+                new LookupClient(
+                    new LookupClientOptions(
+                        NameServer.GooglePublicDns,       // 8.8.8.8
+                        NameServer.GooglePublicDns2       // 8.8.4.4
+                    )
+                    {
+                        UseCache = false,                 // don't cache during testing
+                        Retries  = 3,
+                        Timeout  = TimeSpan.FromSeconds(5)
+                    }
+                )
+            );
+            services.AddScoped<IDnsService, DnsServices>();
             services.AddMemoryCache();
             services.AddScoped<NaturalLanguageQueryParser>();
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(FeatureFlagBehaviour<,>));

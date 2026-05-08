@@ -1,6 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 using Fourteen.Domain.Aggregates.Profiles;
+using DomainEntity = Fourteen.Domain.Aggregates.Domains.Domain;
 using Microsoft.AspNetCore.WebUtilities;
+using Fourteen.Domain.Aggregates.Domains;
 
 namespace Fourteen.Application.Common.DTOs
 {

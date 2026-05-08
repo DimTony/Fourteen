@@ -1,6 +1,7 @@
 ﻿using Fourteen.Application.Common.DTOs;
 using Fourteen.Domain.Aggregates.Users;
 using Fourteen.Domain.Common;
+using Google.Apis.Auth;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,6 +32,8 @@ namespace Fourteen.Application.Interfaces
     }
     public interface IAuthServices
     {
+        string BuildGoogleRedirectUrl();
+        Task<Result<GoogleUserInfo>> ExchangeGoogleToken(string code, CancellationToken ct);
         string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride);
         Task<Result<CallbackResult>> HandleCallback(string code, string state, string? codeVerifier, CancellationToken ct);
         Task<Result<TokenPair>> Refresh(string rawRefreshToken, CancellationToken ct);
@@ -46,5 +49,26 @@ namespace Fourteen.Application.Interfaces
     public interface IJwtService
     {
         string Generate(User user, TimeSpan lifetime);
+        TokenPair IssueTokenPair(User user, CancellationToken ct);
+    }
+
+    public interface IUserService
+    {
+        Guid? UserId { get; }
+        string? IpAddress { get; }
+        string? Name { get; }
+        string? Email { get; }
+        Guid? ProviderId { get; }
+        string? Role { get; }
+    }
+
+    public interface IDnsService
+    {
+        Task<bool> CheckTxtRecord(string host, string expectedValue, CancellationToken ct);
+    }
+
+    public interface IRedisService
+    {
+        Task PublishJob<T>(string queue, T message, CancellationToken ct = default);
     }
 }

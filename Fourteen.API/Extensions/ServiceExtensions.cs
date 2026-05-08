@@ -241,6 +241,7 @@ namespace Fourteen.API.Extensions
 
             services.AddAuthorization(options =>
             {
+                options.AddPolicy("AnalystOnly", p => p.RequireRole("analyst"));
                 options.AddPolicy("AdminOnly", p => p.RequireRole("admin"));
                 options.AddPolicy("AnyRole",   p => p.RequireRole("admin", "analyst"));
             });

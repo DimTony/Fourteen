@@ -25,7 +25,10 @@
         }
       ],
       "healthCheck": {
-       "command": ["CMD-SHELL", "curl -f http://localhost:8080/api/health || exit 1"],
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/api/health || exit 1"
+        ],
         "interval": 30,
         "timeout": 5,
         "retries": 3,
@@ -97,6 +100,58 @@
           "value": "true"
         },
         {
+          "name": "Features__GetUsers",
+          "value": "true"
+        },
+        {
+          "name": "Features__UpdateUserRole",
+          "value": "true"
+        },
+        {
+          "name": "Features__GoogleAuth",
+          "value": "true"
+        },
+        {
+          "name": "Features__RegisterUser",
+          "value": "true"
+        },
+        {
+          "name": "Features__LoginUser",
+          "value": "true"
+        },
+        {
+          "name": "Features__UpdateUser",
+          "value": "true"
+        },
+        {
+          "name": "Features__AddDomain",
+          "value": "true"
+        },
+        {
+          "name": "Features__GetDomains",
+          "value": "true"
+        },
+        {
+          "name": "Features__GetDomainById",
+          "value": "true"
+        },
+        {
+          "name": "Features__DeleteDomain",
+          "value": "true"
+        },
+        {
+          "name": "Features__VerifyDomain",
+          "value": "true"
+        },
+        {
+          "name": "Features__StartScan",
+          "value": "true"
+        },
+        {
+          "name": "Features__ProcessScanResult",
+          "value": "true"
+        },
+        {
           "name": "Jwt__Issuer",
           "value": "FourteenAPI"
         },
@@ -107,6 +162,14 @@
         {
           "name": "Jwt__ExpirationMinutes",
           "value": "3"
+        },
+        {
+          "name": "GitHub__WebCallbackUri",
+          "value": "http://localhost:3000/callback"
+        },
+        {
+          "name": "GitHub__CliCallbackUri",
+          "value": "http://localhost:9876/callback"
         },
         {
           "name": "GitHub__RedirectUri",
@@ -147,12 +210,40 @@
         {
           "name": "App__AllowedOrigins",
           "value": "https://fourteen-web.vercel.app"
+        },
+        {
+          "name": "Google__RedirectUri",
+          "value": "https://fourteen-api.vercel.app/auth/google/callback"
+        },
+        {
+          "name": "Google__AuthUrl",
+          "value": "https://accounts.google.com/o/oauth2/v2/auth"
+        },
+        {
+          "name": "Google__TokenUrl",
+          "value": "https://oauth2.googleapis.com/token"
+        },
+        {
+          "name": "Google__WebCallbackUri",
+          "value": "https://fourteen-web.vercel.app/dashboard"
+        },
+        {
+          "name": "Logging__LogLevel__Default",
+          "value": "Information"
+        },
+        {
+          "name": "Logging__LogLevel__Microsoft.AspNetCore",
+          "value": "Warning"
         }
       ],
       "secrets": [
         {
           "name": "ConnectionStrings__DefaultConnection",
           "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/ConnectionStrings__DefaultConnection"
+        },
+        {
+          "name": "ConnectionStrings__RedisConnection",
+          "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/ConnectionStrings__RedisConnection"
         },
         {
           "name": "Jwt__SecretKey",
@@ -165,6 +256,14 @@
         {
           "name": "GitHub__ClientSecret",
           "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/GitHub__ClientSecret"
+        },
+        {
+          "name": "Google__ClientId",
+          "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/Google__ClientId"
+        },
+        {
+          "name": "Google__ClientSecret",
+          "valueFrom": "arn:aws:ssm:eu-north-1:012834916544:parameter/fourteen/production/Google__ClientSecret"
         }
       ],
       "logConfiguration": {

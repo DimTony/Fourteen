@@ -18,10 +18,10 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
               IUserRepository
     {
         public UserRepository(AppDbContext context) : base(context) { }
-        
-        public Task<User?> FindByGithubId(string githubId, CancellationToken ct = default)
+
+        public Task<User?> FindByEmail(string email, CancellationToken ct = default)
         {
-            return _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.GithubId == githubId, ct);
+            return _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email, ct);
         }
 
         public async Task<MetricDto> GetUserGrowth(CancellationToken ct = default)

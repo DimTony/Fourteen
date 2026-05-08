@@ -2,12 +2,15 @@
 using Fourteen.Domain.Common;
 using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
 using Fourteen.Application.Common.DTOs;
+using DomainEntity = Fourteen.Domain.Aggregates.Domains.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Fourteen.Domain.Aggregates.Users;
+using Fourteen.Application.Features.Domains.Queries.GetDomains;
+using Fourteen.Domain.Aggregates.Domains;
 
 namespace Fourteen.Application.Interfaces
 {
@@ -36,4 +39,24 @@ namespace Fourteen.Application.Interfaces
 
         Task<IReadOnlyList<RefreshToken>> GetActiveByUserId(Guid userId, CancellationToken ct = default);
     } 
+
+    public interface IDomainRepository 
+        : IRepository<DomainEntity, DomainId>
+    {
+        Task<DomainEntity?> GetByNameAndUser(UserId userId, string name, CancellationToken ct = default);
+        Task<(IReadOnlyList<DomainEntity>, int)> GetPaged(GetDomainsQuery q, CancellationToken ct = default);
+
+    }
+
+    public interface IScanRepository
+        : IRepository<Scan, ScanId>
+    {
+        Task<IReadOnlyList<Scan>> GetActiveByDomain(DomainId domainId, CancellationToken ct = default);
+    }
+
+    public interface IFindingRepository
+        : IRepository<Finding, FindingId>
+    {
+        // Task<IReadOnlyList<Scan>> GetActiveByDomain(DomainId domainId, CancellationToken ct = default);
+    }
 }

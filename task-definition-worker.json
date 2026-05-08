@@ -1,0 +1,39 @@
+{
+  "family": "fourteen-worker-task",
+  "executionRoleArn": "arn:aws:iam::012834916544:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "1024",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "containerDefinitions": [
+    {
+      "name": "fourteen-worker-container",
+      "image": "012834916544.dkr.ecr.eu-north-1.amazonaws.com/fourteen-worker:latest",
+      "cpu": 0,
+      "essential": true,
+      "environment": [
+        {
+          "name": "REDIS_HOST",
+          "value": "owlite-redis-zhmevs.serverless.eun1.cache.amazonaws.com"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/fourteen-worker",
+          "awslogs-create-group": "true",
+          "awslogs-region": "eu-north-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

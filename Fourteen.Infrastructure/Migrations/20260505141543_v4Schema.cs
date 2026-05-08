@@ -6,11 +6,47 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Fourteen.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitSchema : Migration
+    public partial class v4Schema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "domains",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    user_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    verification_status = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    verification_token = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    verified_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_domains", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "findings",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    scan_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    type = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    severity = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    raw_data = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    explanation = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    recommendation = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_findings", x => x.id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "profiles",
                 columns: table => new
@@ -49,12 +85,32 @@ namespace Fourteen.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "scans",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    domain_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    requested_by = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    status = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    started_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    completed_at = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    failure_reason = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_scans", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "users",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    github_id = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    provider_id = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     username = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    password_hash = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     avatar_url = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     role = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -66,6 +122,36 @@ namespace Fourteen.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_users", x => x.id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_domains_created_at",
+                table: "domains",
+                column: "created_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_domains_verification_status",
+                table: "domains",
+                column: "verification_status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_findings_created_at",
+                table: "findings",
+                column: "created_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_findings_scan_id",
+                table: "findings",
+                column: "scan_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_findings_severity",
+                table: "findings",
+                column: "severity");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_findings_type",
+                table: "findings",
+                column: "type");
 
             migrationBuilder.CreateIndex(
                 name: "IX_profiles_age",
@@ -124,6 +210,21 @@ namespace Fourteen.Infrastructure.Migrations
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_scans_created_at",
+                table: "scans",
+                column: "created_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_scans_domain_id",
+                table: "scans",
+                column: "domain_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_scans_status",
+                table: "scans",
+                column: "status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_users_created_at",
                 table: "users",
                 column: "created_at");
@@ -135,15 +236,15 @@ namespace Fourteen.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_users_github_id",
-                table: "users",
-                column: "github_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_users_is_active",
                 table: "users",
                 column: "is_active");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_users_provider_id",
+                table: "users",
+                column: "provider_id",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_users_username",
@@ -156,10 +257,19 @@ namespace Fourteen.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "domains");
+
+            migrationBuilder.DropTable(
+                name: "findings");
+
+            migrationBuilder.DropTable(
                 name: "profiles");
 
             migrationBuilder.DropTable(
                 name: "refresh_tokens");
+
+            migrationBuilder.DropTable(
+                name: "scans");
 
             migrationBuilder.DropTable(
                 name: "users");
