@@ -24,7 +24,7 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
             return _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.GithubId == githubId, ct);
         }
 
-        public async Task<MetricDto> GetUserGrowthAsync(CancellationToken ct = default)
+        public async Task<MetricDto> GetUserGrowth(CancellationToken ct = default)
         {
             var today = DateTime.UtcNow.Date;
             var yesterday = today.AddDays(-1);

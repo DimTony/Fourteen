@@ -4,6 +4,41 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace Fourteen.Application.Common.DTOs
 {
+    public sealed class BulkImportResult
+    {
+        [JsonPropertyName("status")]
+        public string Status { get; init; } = "success";
+ 
+        [JsonPropertyName("total_rows")]
+        public int TotalRows { get; init; }
+ 
+        [JsonPropertyName("inserted")]
+        public int Inserted { get; init; }
+ 
+        [JsonPropertyName("skipped")]
+        public int Skipped { get; init; }
+ 
+        [JsonPropertyName("reasons")]
+        public SkipReasons Reasons { get; init; } = new();
+    }
+ 
+    public sealed class SkipReasons
+    {
+        [JsonPropertyName("duplicate_name")]
+        public int DuplicateName { get; set; }
+ 
+        [JsonPropertyName("invalid_age")]
+        public int InvalidAge { get; set; }
+ 
+        [JsonPropertyName("invalid_gender")]
+        public int InvalidGender { get; set; }
+ 
+        [JsonPropertyName("missing_fields")]
+        public int MissingFields { get; set; }
+ 
+        [JsonPropertyName("malformed_row")]
+        public int MalformedRow { get; set; }
+    }
     public class GetDashboardStatsResponse
     {
         [JsonPropertyName("status")]

@@ -20,7 +20,8 @@ namespace Fourteen.Infrastructure;
             services
                 .AddPersistence(configuration)
                 .AddRepositories()
-                .AddServices(configuration);
+                .AddServices(configuration)
+                .AddCaching();
 
             return services;
         }
@@ -31,7 +32,7 @@ namespace Fourteen.Infrastructure;
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            services.AddDbContext<AppDbContext>(options =>
+          services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString, sqlOptions =>
                 {
                     sqlOptions.EnableRetryOnFailure(
@@ -39,6 +40,18 @@ namespace Fourteen.Infrastructure;
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorNumbersToAdd: null);
                 }));
+
+            services.AddDbContextFactory<AppDbContext>(options =>
+                options.UseSqlServer(connectionString, sqlOptions =>
+                {
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(15),
+                        errorNumbersToAdd: null);
+    
+                    sqlOptions.CommandTimeout(120);
+                }),
+                ServiceLifetime.Scoped);
 
             services.AddScoped<IReadDbContext>(sp => sp.GetRequiredService<AppDbContext>());
             services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -56,6 +69,21 @@ namespace Fourteen.Infrastructure;
             return services;
         }
 
+        private static IServiceCollection AddCaching(
+            this IServiceCollection services)
+        {
+
+            services.AddMemoryCache(opts =>
+            {
+                opts.SizeLimit = 10_000;
+                opts.CompactionPercentage = 0.2;  
+            });
+    
+            services.AddSingleton<IQueryCache, MemoryQueryCache>();
+    
+            return services;
+        }
+
 
         private static IServiceCollection AddServices(
             this IServiceCollection services,
@@ -69,6 +97,7 @@ namespace Fourteen.Infrastructure;
             services.AddMemoryCache();
             services.AddScoped<NaturalLanguageQueryParser>();
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(FeatureFlagBehaviour<,>));
+            services.AddTransient<IBulkProfileImporter, BulkProfileImporter>();
 
             services.AddHttpClient("genderize", c =>
             {

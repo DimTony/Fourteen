@@ -46,8 +46,15 @@ namespace Fourteen.Infrastructure.Services
             
             var encodedState = Uri.EscapeDataString(resolvedState);
             
-            _memoryCache.Set($"oauth:{encodedState}", new OAuthState(codeChallenge, callbackOverride),
-                TimeSpan.FromMinutes(10));
+            _memoryCache.Set(
+                $"oauth:{encodedState}",
+                new OAuthState(codeChallenge, callbackOverride),
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    Size = 1
+                }
+            );
 
             var redirectForGithub = callbackOverride ?? serverRedirectUri;
             return _github.BuildAuthUrl(encodedState, redirectForGithub);

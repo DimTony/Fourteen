@@ -16,7 +16,7 @@ namespace Fourteen.Application.Features.Users.Queries.GetDashboardStats
 
         public async Task<Result<MetricDto>> Handle(GetDashboardStatsQuery request, CancellationToken cancellationToken)
         {
-            var stats = await _userRepo.GetUserGrowthAsync(cancellationToken);
+            var stats = await _userRepo.GetUserGrowth(cancellationToken);
 
             return Result.Success(stats);
         }

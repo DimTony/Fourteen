@@ -17,7 +17,7 @@ namespace Fourteen.Application.Interfaces
         Task<Profile?> GetByName(string name, CancellationToken ct = default);
         Task<List<Profile>> GetAll(string? gender, string? countryId, string? ageGroup, CancellationToken ct = default);
         Task<(IReadOnlyList<Profile>, int)> NaturalLanguageSearch(ParsedProfileFilter filter, int page = 1, int limit = 10, CancellationToken ct = default);
-        Task<(IReadOnlyList<Profile>, int)> GetPagedAsync(GetProfilesQuery q, CancellationToken ct = default);
+        Task<(IReadOnlyList<Profile>, int)> GetPaged(GetProfilesQuery q, CancellationToken ct = default);
 
     }
 
@@ -26,7 +26,7 @@ namespace Fourteen.Application.Interfaces
     {
         Task<User?> FindByGithubId(string githubId, CancellationToken ct = default);
 
-        Task<MetricDto> GetUserGrowthAsync(CancellationToken ct = default);
+        Task<MetricDto> GetUserGrowth(CancellationToken ct = default);
     }
 
     public interface IRefreshTokenRepository
@@ -34,6 +34,6 @@ namespace Fourteen.Application.Interfaces
     {
         Task<RefreshToken?> FindValidByUser(string rawToken, CancellationToken ct = default);
 
-        Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(Guid userId, CancellationToken ct = default);
+        Task<IReadOnlyList<RefreshToken>> GetActiveByUserId(Guid userId, CancellationToken ct = default);
     } 
 }

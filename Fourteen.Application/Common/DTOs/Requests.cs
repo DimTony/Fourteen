@@ -5,6 +5,26 @@ using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
 
 namespace Fourteen.Application.Common.DTOs
 {
+    public sealed class ImportCounters
+    {
+        public int TotalRows { get; set; }
+        public int Inserted  { get; set; }
+        public int Skipped   { get; set; }
+        public SkipReasons Reasons { get; set; } = new();
+    }
+    public static class CsvColumns
+    {
+        public const int Name              = 0;
+        public const int Gender            = 1;
+        public const int GenderProbability = 2;
+        public const int Age               = 3;
+        public const int AgeGroup          = 4;
+        public const int CountryId         = 5;
+        public const int CountryName       = 6;
+        public const int CountryProbability = 7;
+ 
+        public const int RequiredCount = 8;
+    }
     public class ProfileFilterApiRequest
     {
         [FromQuery(Name = "gender")]

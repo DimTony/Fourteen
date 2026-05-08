@@ -12,8 +12,8 @@ using Microsoft.AspNetCore.WebUtilities;
 namespace Fourteen.API.Controllers
 {
     [ApiController]
-    [EnableRateLimiting("api")]
     [Route("api/[controller]")]
+    [EnableRateLimiting("api")]
     public class UsersController : ControllerBase
     {
         private readonly IMediator mediator;
