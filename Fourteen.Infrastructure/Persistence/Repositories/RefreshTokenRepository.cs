@@ -29,7 +29,7 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
                 BCrypt.Net.BCrypt.Verify(rawToken, rt.Token));
         }
 
-        public async Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(
+        public async Task<IReadOnlyList<RefreshToken>> GetActiveByUserId(
             Guid userId, CancellationToken ct = default)
         {
             return await _context.RefreshTokens

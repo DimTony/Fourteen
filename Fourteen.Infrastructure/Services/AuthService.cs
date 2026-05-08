@@ -44,111 +44,22 @@ namespace Fourteen.Infrastructure.Services
             _unitOfWork = unitOfWork;
         }
 
-        public string BuildGoogleRedirectUrl()
-        {
-            var clientId = _config["Google:ClientId"];
-            var redirectUri = _config["Google:RedirectUri"];
-            var scope = "openid email profile";
-
-            var state = Guid.NewGuid().ToString("N");
-
-            var encodedState = Uri.EscapeDataString(state);
-
-            _memoryCache.Set($"oauth:{encodedState}", new OAuthState(null, null),
-                TimeSpan.FromMinutes(10));
-
-
-            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(redirectUri))
-                throw new Exception("Google OAuth configuration is missing");
-
-            var query = QueryHelpers.AddQueryString(_config["Google:AuthUrl"]!,
-                new Dictionary<string, string?>
-                {
-                    ["client_id"] = clientId,
-                    ["redirect_uri"] = redirectUri,
-                    ["response_type"] = "code",
-                    ["scope"] = scope,
-                    ["state"] = state,
-                    ["nonce"] = Guid.NewGuid().ToString("N")
-                });
-
-            return query;
-        }
-        public async Task<Result<GoogleUserInfo>> ExchangeGoogleToken(string code, CancellationToken ct)
-        {
-            try
-            {
-                var googleTokensRequest = new HttpRequestMessage(HttpMethod.Post,
-                    _config["Google:TokenUrl"]!);
-
-                googleTokensRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                googleTokensRequest.Content = JsonContent.Create(new
-                {
-                    client_id = _config["Google:ClientId"]!,
-                    client_secret = _config["Google:ClientSecret"]!,
-                    code = code,
-                    redirect_uri = _config["Google:RedirectUri"]!,
-                    grant_type = "authorization_code"
-                });
-
-                var tokenResponse = await _httpClient.SendAsync(googleTokensRequest, ct);
-
-                var rawContent = await tokenResponse.Content.ReadAsStringAsync(ct);
-
-                tokenResponse.EnsureSuccessStatusCode();
-
-                var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<GoogleTokenResponse>(ct);
-
-                if (tokenResult is null || string.IsNullOrWhiteSpace(tokenResult.AccessToken))
-                    throw new InvalidOperationException("GitHub did not return an access token");
-
-
-                var payload = await GoogleJsonWebSignature.ValidateAsync(
-                    tokenResult.IdToken,
-                    new GoogleJsonWebSignature.ValidationSettings
-                    {
-                        Audience = new[] { _config["Google:ClientId"] }
-                    });
-
-                return Result.Success(new GoogleUserInfo
-                {
-                    GoogleId = payload.Subject,     
-                    Email = payload.Email,
-                    EmailVerified = payload.EmailVerified,
-                    FullName = payload.Name,
-                    GivenName = payload.GivenName,
-                    FamilyName = payload.FamilyName,
-                    AvatarUrl = payload.Picture
-                });
-            }
-            catch (InvalidJwtException ex)
-            {
-                _logger.LogWarning(ex, "Invalid Google ID token");
-                return Result.Failure<GoogleUserInfo>("InvalidToken");
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP error during Google token exchange");
-                return Result.Failure<GoogleUserInfo>("TokenExchangeFailed");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during Google token exchange");
-                return Result.Failure<GoogleUserInfo>("GoogleAuthFailed");
-            }
-        }
-
-
         public string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride)
         {
             var resolvedState = state ?? Guid.NewGuid().ToString("N");
             var serverRedirectUri = _config["GitHub:RedirectUri"] ?? string.Empty;
 
             var encodedState = Uri.EscapeDataString(resolvedState);
-
-            _memoryCache.Set($"oauth:{encodedState}", new OAuthState(codeChallenge, callbackOverride),
-                TimeSpan.FromMinutes(10));
+            
+            _memoryCache.Set(
+                $"oauth:{encodedState}",
+                new OAuthState(codeChallenge, callbackOverride),
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+                    Size = 1
+                }
+            );
 
             var redirectForGithub = callbackOverride ?? serverRedirectUri;
             return _github.BuildAuthUrl(encodedState, redirectForGithub);

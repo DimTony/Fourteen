@@ -10,6 +10,20 @@ using System.Threading.Tasks;
 
 namespace Fourteen.Application.Interfaces
 {
+    public interface IBulkProfileImporter
+    {
+
+        Task<BulkImportResult> Import(
+            Stream csvStream,
+            CancellationToken ct = default);
+    }
+    public interface IQueryCache
+    {
+        Task<T?> Get<T>(string key, CancellationToken ct = default) where T : class;
+        Task Set<T>(string key, T value, TimeSpan ttl, CancellationToken ct = default) where T : class;
+        Task Remove(string key, CancellationToken ct = default);
+        Task RemoveByPrefix(string prefix, CancellationToken ct = default);
+    }
     public interface IServices
     {
         Task<ExternalAPIDto> GetByName(string name, CancellationToken ct);
@@ -18,8 +32,6 @@ namespace Fourteen.Application.Interfaces
     }
     public interface IAuthServices
     {
-        string BuildGoogleRedirectUrl();
-        Task<Result<GoogleUserInfo>> ExchangeGoogleToken(string code, CancellationToken ct);
         string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride);
         Task<Result<CallbackResult>> HandleCallback(string code, string state, string? codeVerifier, CancellationToken ct);
         Task<Result<TokenPair>> Refresh(string rawRefreshToken, CancellationToken ct);

@@ -6,75 +6,26 @@ using Fourteen.Domain.Common;
 
 namespace Fourteen.Application.Common.DTOs
 {
-    public record AiJob(
-        string ScanId,
-        List<FindingResult> Findings
-    );
-    public record FindingResult(
-        string Type,            // "DNS" | "SSL" | "Headers"
-        string Severity,        // "Info" | "Low" | "Medium" | "High" | "Critical"
-        string Title,
-        string RawData          // JSON string with tool-specific output
-    );
-
-    public record ScanResult(
-        string ScanId,
-        bool Success,
-        string? FailureReason,
-        List<FindingResult> Findings
-    );
-    public record ScanJob(
-        string ScanId,
-        string DomainId,
-        string DomainName,
-        string ScanType,        // "Full" | "DNS" | "SSL" | "Headers"
-        DateTime EnqueuedAt
-    );
-    public class DomainsFilterApiRequest
+    public sealed class ImportCounters
     {
-        [FromQuery(Name = "status")]
-        public string? VerificationStatus { get; set; }
-
-        [FromQuery(Name = "owner")]
-        public Guid? UserId { get; set; }
-
-        [FromQuery(Name = "sort_by")]
-        public string SortBy { get; set; } = "created_at";
-
-        [FromQuery(Name = "order")]
-        public string Order { get; set; } = "asc";
-
-        [FromQuery(Name = "page")]
-        public int Page { get; set; } = 1;
-        
-        [FromQuery(Name = "limit")]
-        public int Limit { get; set; } = 10;
-
-        private static readonly HashSet<string> ValidSortFields = ["verified_at", "created_at"];
-
-        public bool IsValid(out string? error)
-        {
-            if (Limit > 50) { error = "Invalid query parameters"; return false; }
-            if (!string.IsNullOrEmpty(VerificationStatus) && !Enum.TryParse<VerificationStatus>(VerificationStatus, true, out _)) { error = "Invalid query parameters"; return false; }
-            if (!ValidSortFields.Contains(SortBy)) { error = "Invalid query parameters"; return false; }
-            if (Order is not "asc" and not "desc") { error = "Invalid query parameters"; return false; }
-            error = null;
-            return true;
-        }
+        public int TotalRows { get; set; }
+        public int Inserted  { get; set; }
+        public int Skipped   { get; set; }
+        public SkipReasons Reasons { get; set; } = new();
     }
-    public class UpdateUserRequest
+    public static class CsvColumns
     {
-        [JsonPropertyName("username")]
-        public string Username { get; set; } = default!;
-
-        [JsonPropertyName("avatar_url")]
-        public string? AvatarUrl { get; set; }
+        public const int Name              = 0;
+        public const int Gender            = 1;
+        public const int GenderProbability = 2;
+        public const int Age               = 3;
+        public const int AgeGroup          = 4;
+        public const int CountryId         = 5;
+        public const int CountryName       = 6;
+        public const int CountryProbability = 7;
+ 
+        public const int RequiredCount = 8;
     }
-    public class GoogleCallbackRequest
-    {
-        public string? IdToken { get; set; }
-    }
-    
     public class ProfileFilterApiRequest
     {
         [FromQuery(Name = "gender")]

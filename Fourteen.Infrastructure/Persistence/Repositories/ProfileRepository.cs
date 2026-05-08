@@ -73,7 +73,7 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
             return (items, total);
         }
 
-        public async Task<(IReadOnlyList<Profile>, int)> GetPagedAsync(GetProfilesQuery q, CancellationToken ct = default)
+        public async Task<(IReadOnlyList<Profile>, int)> GetPaged(GetProfilesQuery q, CancellationToken ct = default)
         {
             var query = _context.Profiles.AsNoTracking().AsQueryable();
 

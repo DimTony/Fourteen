@@ -1,19 +1,13 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Fourteen.Application.Common.DTOs;
-using Fourteen.Application.Features.Authentication.Commands.GoogleCallback;
 using Fourteen.Application.Features.Authentication.Commands.LoginUser;
 using Fourteen.Application.Features.Authentication.Commands.RegisterUser;
-using Fourteen.Application.Features.Profiles.Commands.CreateProfile;
-using Fourteen.Application.Features.Profiles.Commands.DeleteProfile;
-using Fourteen.Application.Features.Profiles.Queries.GetProfiles;
-using Fourteen.Application.Features.Profiles.Queries.SearchProfiles;
 using Fourteen.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.WebUtilities;
 
 namespace Fourteen.API.Controllers
 {
@@ -95,43 +89,6 @@ namespace Fourteen.API.Controllers
                     RefreshToken = tokenPair.RefreshToken,
                 }
             });
-        }
-
-        [HttpGet("google")]
-        public IActionResult RedirectToGoogle()
-        {
-            
-            var redirectUrl = _authService.BuildGoogleRedirectUrl();
-
-            return Redirect(redirectUrl);
-        }
-
-        [HttpGet("google/callback")]
-        public async Task<IActionResult> GoogleCallback(
-             [FromQuery] string code,
-            [FromQuery] string state,
-            CancellationToken ct)
-        {
-            var requestId = HttpContext.TraceIdentifier;
-
-            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state))
-            {
-                return BadRequest(new { status = "error", message = "Missing authorization code or state" });
-            }
-
-            var result = await this.mediator.Send(new GoogleCallbackCommand(code, state), ct);
-
-            if (result.IsFailure)
-            {
-                return Unauthorized(new { status = "error", message = result.Error });
-            }
-
-            var tokenPair = result.Value;
-
-            AppendAuthCookies(tokenPair);
-
-            return Redirect(_config["Google:WebCallbackUri"]!);
-
         }
 
         [HttpGet("github")]

@@ -24,21 +24,4 @@ namespace Fourteen.Domain.Common
         public override string ToString() => Value.ToString();
     }
 
-    public record DomainId(Guid Value)
-    {
-        public static DomainId New() => new(Guid.CreateVersion7());
-        public override string ToString() => Value.ToString();
-    }
-
-    public record ScanId(Guid Value)
-    {
-        public static ScanId New() => new(Guid.CreateVersion7());
-        public override string ToString() => Value.ToString();
-    }
-
-    public record FindingId(Guid Value)
-    {
-        public static FindingId New() => new(Guid.CreateVersion7());
-        public override string ToString() => Value.ToString();
-    }
 }
