@@ -24,12 +24,7 @@ namespace Fourteen.Infrastructure.Persistence.Repositories
             return _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email, ct);
         }
 
-        public Task<User?> FindByProviderId(string providerId, CancellationToken ct = default)
-        {
-            return _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.ProviderId == providerId, ct);
-        }
-        
-        public async Task<MetricDto> GetUserGrowthAsync(CancellationToken ct = default)
+        public async Task<MetricDto> GetUserGrowth(CancellationToken ct = default)
         {
             var today = DateTime.UtcNow.Date;
             var yesterday = today.AddDays(-1);

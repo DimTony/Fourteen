@@ -480,63 +480,68 @@ namespace Fourteen.Application.Common.Helpers
         private static readonly HashSet<string> Stopwords = new(StringComparer.OrdinalIgnoreCase)
             { "and", "or", "the", "from", "people", "persons", "users", "age", "aged", "with", "who", "are", "of" };
         public static ParsedProfileFilter Parse(string query)
-    {
-        if (string.IsNullOrWhiteSpace(query))
-            return new ParsedProfileFilter();
-
-        var normalized = query
-            .ToLowerInvariant()
-            .Replace("-", "").Replace("_", "")
-            .Replace(",", " ").Replace(".", " ")
-            .Replace("middle aged",   "middleaged")
-            .Replace("south africa",  "southafrica")
-            .Replace("united states", "unitedstates")
-            .Replace("united kingdom","unitedkingdom");
-
-        var explicitAge = ParseExplicitAge(normalized);
-
-        var tokens = normalized
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            .Where(t => !Stopwords.Contains(t))
-            .ToArray();
-
-        string? gender = null;
-        (int Min, int Max)? ageGroup = null;
-        string? countryId = null;
-        var genderTokensFound = new HashSet<string>();
-
-        foreach (var token in tokens)
         {
-            if (GenderMap.TryGetValue(token, out var g))
-                genderTokensFound.Add(g);
+            if (string.IsNullOrWhiteSpace(query))
+                return new ParsedProfileFilter();
+                
+           var normalized = query
+                .ToLowerInvariant()
+                .Replace("–", " to ")
+                .Replace("—", " to ")
+                .Replace("-", " ")   
+                .Replace(",", " ")
+                .Replace(".", " ")
+                .Replace("middle aged",    "middleaged")
+                .Replace("south africa",   "southafrica")
+                .Replace("united states",  "unitedstates")
+                .Replace("united kingdom", "unitedkingdom");
 
-            if (ageGroup is null && AgeGroupMap.TryGetValue(token, out var range))
-                ageGroup = range;
+            var explicitAge = ParseExplicitAge(normalized);
 
-            if (countryId is null && CountryMap.TryGetValue(token, out var cid))
-                countryId = cid;
+            var tokens = normalized
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Where(t => !Stopwords.Contains(t))
+                .ToArray();
+
+            string? gender = null;
+            (int Min, int Max)? ageGroup = null;
+            string? countryId = null;
+            var genderTokensFound = new HashSet<string>();
+
+            foreach (var token in tokens)
+            {
+                if (GenderMap.TryGetValue(token, out var g))
+                    genderTokensFound.Add(g);
+
+                if (ageGroup is null && AgeGroupMap.TryGetValue(token, out var range))
+                    ageGroup = range;
+
+                if (countryId is null && CountryMap.TryGetValue(token, out var cid))
+                    countryId = cid;
+                else if (countryId is null && NationalityMap.TryGetValue(token, out var ncid))
+                    countryId = ncid;
+            }
+
+            if (genderTokensFound.Count == 1)
+                gender = genderTokensFound.First();
+
+            int? ageMin = explicitAge.Min;
+            int? ageMax = explicitAge.Max;
+
+            if (ageGroup is not null)
+            {
+                ageMin ??= ageGroup.Value.Min;
+                ageMax ??= ageGroup.Value.Max;
+            }
+
+            return new ParsedProfileFilter
+            {
+                Gender    = gender,
+                AgeMin    = ageMin,
+                AgeMax    = ageMax,
+                CountryId = countryId,
+            };
         }
-
-        if (genderTokensFound.Count == 1)
-            gender = genderTokensFound.First();
-
-        int? ageMin = explicitAge.Min;
-        int? ageMax = explicitAge.Max;
-
-        if (ageGroup is not null)
-        {
-            ageMin ??= ageGroup.Value.Min;
-            ageMax ??= ageGroup.Value.Max;
-        }
-
-        return new ParsedProfileFilter
-        {
-            Gender    = gender,
-            AgeMin    = ageMin,
-            AgeMax    = ageMax,
-            CountryId = countryId,
-        };
-    }
 
         private static (int? Min, int? Max) ParseExplicitAge(string normalized)
         {
