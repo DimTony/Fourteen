@@ -1,158 +1,68 @@
 ﻿using System.Text.Json.Serialization;
 using Fourteen.Domain.Aggregates.Profiles;
-using DomainEntity = Fourteen.Domain.Aggregates.Domains.Domain;
 using Microsoft.AspNetCore.WebUtilities;
-using Fourteen.Domain.Aggregates.Domains;
 
 namespace Fourteen.Application.Common.DTOs
 {
-    public class ScanDto
+    public sealed class AuthTokenDto
     {
-        [JsonPropertyName("id")]
-        public required string Id { get; set; }
-
-        [JsonPropertyName("domain_id")]
-        public required string DomainId { get; set; }
-
-        [JsonPropertyName("domain_name")]
-        public required string DomainName { get; set; }
-
-        [JsonPropertyName("scan_type")]
-        public required string ScanType { get; set; }
-
-        public static ScanDto From(Scan scan)
-        {
-            return new ScanDto
-            {
-                Id = scan.Id.Value.ToString(),
-                DomainId = "",
-                DomainName = "",
-                ScanType = "",
-
-            };
-        }
-    }
-    public class ApiResponse<T>
-    {
-        [JsonPropertyName("status")]
-        public required string Status { get; set; }
-
-        [JsonPropertyName("message")]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Message { get; set; }
-
-        [JsonPropertyName("data")]
-        public required T Data { get; set; }
-    }
-    public class PagedResponse<T>
-    {
-        [JsonPropertyName("status")]
-        public required string Status { get; set; }
-
-        [JsonPropertyName("page")]
-        public required int Page { get; set; }
-
-        [JsonPropertyName("limit")]
-        public required int Limit { get; set; }
-
-        [JsonPropertyName("total")]
-        public required int Total { get; set; }
-
-        [JsonPropertyName("total_pages")]
-        public required int TotalPages { get; set; }
-
-        [JsonPropertyName("links")]
-        public required PageLinks Links { get; set; }
-
-        [JsonPropertyName("data")]
-        public required IEnumerable<T> Data { get; set; }
-    }
-
-    public class DomainDto
-    {
-        [JsonPropertyName("id")]
-        public required Guid Id { get; set; }
-
-        [JsonPropertyName("name")]
-        public required string Name { get; set; }
-
-        [JsonPropertyName("verification_status")]
-        public required string VerificationStatus { get; set; }
-
-        public static DomainDto From(DomainEntity domain)
-        {
-            return new DomainDto
-            {
-                Id = domain.Id.Value,
-                Name = domain.Name,
-                VerificationStatus = domain.VerificationStatus.ToString()
-            };
-        }
-    }
-
-    public class AddDomainResponse
-    {
-        [JsonPropertyName("status")]
-        public required string Status { get; set; }
-
-        [JsonPropertyName("message")]
-        public required string Message { get; set; }
-
-        [JsonPropertyName("data")]
-        public required DomainDto Data { get; set; }
-    }
-    public class AuthTokenDto
-    {
+        [JsonPropertyName("username")]
+        public required string Username { get; init; }
+ 
+        [JsonPropertyName("avatar_url")]
+        public required string AvatarUrl { get; init; }
+ 
         [JsonPropertyName("access_token")]
-        public required string AccessToken { get; set; }
+        public required string AccessToken { get; init; }
 
         [JsonPropertyName("refresh_token")]
-        public required string RefreshToken { get; set; }
-
-        [JsonPropertyName("username")]
-        public required string Username { get; set; }
-
-        [JsonPropertyName("avatar_url")]
-        public required string AvatarUrl { get; set; }
+        public required string RefreshToken { get; init; }
     }
-    public class AuthResponse
+    public sealed class AuthResponse
     {
         [JsonPropertyName("status")]
-        public required string Status { get; set; }
-
+        public string Status { get; init; } = "success";
+ 
         [JsonPropertyName("message")]
-        public required string Message { get; set; }
-
+        public required string Message { get; init; }
+ 
         [JsonPropertyName("data")]
-        public required AuthTokenDto Data { get; set; }
+        public required AuthTokenDto Data { get; init; }
     }
-    public class GoogleUserInfo
+    public sealed class BulkImportResult
     {
-        public string GoogleId { get; set; } = default!;
-        public string Email { get; set; } = default!;
-        public bool EmailVerified { get; set; }
-        public string FullName { get; set; } = default!;
-        public string GivenName { get; set; } = default!;
-        public string FamilyName { get; set; } = default!;
-        public string AvatarUrl { get; set; } = default!;
+        [JsonPropertyName("status")]
+        public string Status { get; init; } = "success";
+ 
+        [JsonPropertyName("total_rows")]
+        public int TotalRows { get; init; }
+ 
+        [JsonPropertyName("inserted")]
+        public int Inserted { get; init; }
+ 
+        [JsonPropertyName("skipped")]
+        public int Skipped { get; init; }
+ 
+        [JsonPropertyName("reasons")]
+        public SkipReasons Reasons { get; init; } = new();
     }
-
-    public class GoogleTokenResponse
+ 
+    public sealed class SkipReasons
     {
-        [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; } = default!;
-
-        [JsonPropertyName("id_token")]
-        public string IdToken { get; set; } = default!;
-
-        [JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
-
-        [JsonPropertyName("scope")]
-        public string Scope { get; set; } = default!;
-
-        [JsonPropertyName("token_type")]
-        public string TokenType { get; set; } = default!;
+        [JsonPropertyName("duplicate_name")]
+        public int DuplicateName { get; set; }
+ 
+        [JsonPropertyName("invalid_age")]
+        public int InvalidAge { get; set; }
+ 
+        [JsonPropertyName("invalid_gender")]
+        public int InvalidGender { get; set; }
+ 
+        [JsonPropertyName("missing_fields")]
+        public int MissingFields { get; set; }
+ 
+        [JsonPropertyName("malformed_row")]
+        public int MalformedRow { get; set; }
     }
     public class GetDashboardStatsResponse
     {

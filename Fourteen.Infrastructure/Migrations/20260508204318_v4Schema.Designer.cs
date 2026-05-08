@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fourteen.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260505141543_v4Schema")]
+    [Migration("20260508204318_v4Schema")]
     partial class v4Schema
     {
         /// <inheritdoc />
@@ -24,157 +24,6 @@ namespace Fourteen.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Fourteen.Domain.Aggregates.Domains.Domain", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("name");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_id");
-
-                    b.Property<string>("VerificationStatus")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("verification_status");
-
-                    b.Property<string>("VerificationToken")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("verification_token");
-
-                    b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("verified_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("VerificationStatus");
-
-                    b.ToTable("domains", (string)null);
-                });
-
-            modelBuilder.Entity("Fourteen.Domain.Aggregates.Domains.Finding", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AiExplanation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("explanation");
-
-                    b.Property<string>("AiRecommendation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("recommendation");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("RawData")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("raw_data");
-
-                    b.Property<Guid>("ScanId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("scan_id");
-
-                    b.Property<string>("Severity")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("severity");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("title");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("type");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("ScanId");
-
-                    b.HasIndex("Severity");
-
-                    b.HasIndex("Type");
-
-                    b.ToTable("findings", (string)null);
-                });
-
-            modelBuilder.Entity("Fourteen.Domain.Aggregates.Domains.Scan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("completed_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("DomainId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("domain_id");
-
-                    b.Property<string>("FailureReason")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("failure_reason");
-
-                    b.Property<Guid>("RequestedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("requested_by");
-
-                    b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("started_at");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("status");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("type");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("DomainId");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("scans", (string)null);
-                });
 
             modelBuilder.Entity("Fourteen.Domain.Aggregates.Profiles.Profile", b =>
                 {
@@ -319,7 +168,6 @@ namespace Fourteen.Infrastructure.Migrations
                         .HasColumnName("last_login_at");
 
                     b.Property<string>("Password")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("password_hash");
 

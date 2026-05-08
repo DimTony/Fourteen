@@ -40,7 +40,6 @@ namespace Fourteen.Infrastructure.Persistence.Configurations
                 .HasColumnName("avatar_url");
 
             builder.Property(p => p.Password)
-                .IsRequired()
                 .HasColumnName("password_hash");
 
             builder.Property(p => p.Role)
