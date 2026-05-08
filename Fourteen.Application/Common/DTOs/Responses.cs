@@ -1,11 +1,34 @@
 ﻿using System.Text.Json.Serialization;
 using Fourteen.Domain.Aggregates.Profiles;
-using DomainEntity = Fourteen.Domain.Aggregates.Domains.Domain;
 using Microsoft.AspNetCore.WebUtilities;
-using Fourteen.Domain.Aggregates.Domains;
 
 namespace Fourteen.Application.Common.DTOs
 {
+    public sealed class AuthTokenDto
+    {
+        [JsonPropertyName("username")]
+        public required string Username { get; init; }
+ 
+        [JsonPropertyName("avatar_url")]
+        public required string AvatarUrl { get; init; }
+ 
+        [JsonPropertyName("access_token")]
+        public required string AccessToken { get; init; }
+
+        [JsonPropertyName("refresh_token")]
+        public required string RefreshToken { get; init; }
+    }
+    public sealed class AuthResponse
+    {
+        [JsonPropertyName("status")]
+        public string Status { get; init; } = "success";
+ 
+        [JsonPropertyName("message")]
+        public required string Message { get; init; }
+ 
+        [JsonPropertyName("data")]
+        public required AuthTokenDto Data { get; init; }
+    }
     public sealed class BulkImportResult
     {
         [JsonPropertyName("status")]

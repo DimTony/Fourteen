@@ -32,8 +32,6 @@ namespace Fourteen.Application.Interfaces
     }
     public interface IAuthServices
     {
-        string BuildGoogleRedirectUrl();
-        Task<Result<GoogleUserInfo>> ExchangeGoogleToken(string code, CancellationToken ct);
         string BuildGithubRedirectUrl(string? codeChallenge, string state, string? callbackOverride);
         Task<Result<CallbackResult>> HandleCallback(string code, string state, string? codeVerifier, CancellationToken ct);
         Task<Result<TokenPair>> Refresh(string rawRefreshToken, CancellationToken ct);

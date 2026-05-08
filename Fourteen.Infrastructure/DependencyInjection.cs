@@ -34,7 +34,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        
+
         services.AddDbContext<AppDbContext>(options =>
               options.UseSqlServer(connectionString, sqlOptions =>
               {
@@ -84,9 +84,6 @@ public static class DependencyInjection
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-        services.AddScoped<IDomainRepository, DomainRepository>();
-        services.AddScoped<IScanRepository, ScanRepository>();
-        services.AddScoped<IFindingRepository, FindingRepository>();
 
         return services;
     }
