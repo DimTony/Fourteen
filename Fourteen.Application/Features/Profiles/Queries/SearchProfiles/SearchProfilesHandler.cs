@@ -33,7 +33,7 @@ namespace Fourteen.Application.Features.Profiles.Queries.SearchProfiles
             if (filter.IsEmpty)
                 throw new UnparsableQueryException(request.RawQuery);
 
-            _logger.LogInformation("Filtering search with filters={@filter}", filter);
+            // _logger.LogInformation("Filtering search with filters={@filter}", filter);
             
 
             var cacheKey = CacheKeyBuilder.ForSearch(filter, request.Page, request.Limit);
@@ -42,7 +42,7 @@ namespace Fourteen.Application.Features.Profiles.Queries.SearchProfiles
 
             if (cached is not null)
             {
-                _logger.LogInformation("Caching returned from key={Key}", cacheKey);
+                // _logger.LogInformation("Caching returned from key={Key}", cacheKey);
                 return Result.Success(cached);
             }
 
@@ -63,7 +63,7 @@ namespace Fourteen.Application.Features.Profiles.Queries.SearchProfiles
             try
             {
                 await _cache.Set(cacheKey, result, CacheTtl, cancellationToken);
-                _logger.LogInformation("Caching set with key={Key}", cacheKey);
+                // _logger.LogInformation("Caching set with key={Key}", cacheKey);
 
             }
             catch (Exception ex)
