@@ -165,7 +165,6 @@ namespace Fourteen.Infrastructure.Migrations
                         .HasColumnName("last_login_at");
 
                     b.Property<string>("Password")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("password_hash");
 

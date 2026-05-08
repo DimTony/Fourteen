@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fourteen.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260508203659_v4Schema")]
+    [Migration("20260508204318_v4Schema")]
     partial class v4Schema
     {
         /// <inheritdoc />
@@ -168,7 +168,6 @@ namespace Fourteen.Infrastructure.Migrations
                         .HasColumnName("last_login_at");
 
                     b.Property<string>("Password")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("password_hash");
 

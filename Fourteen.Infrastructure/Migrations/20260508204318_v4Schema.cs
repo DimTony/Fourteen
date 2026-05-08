@@ -55,7 +55,7 @@ namespace Fourteen.Infrastructure.Migrations
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     provider_id = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     username = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    password_hash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    password_hash = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     avatar_url = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     role = table.Column<string>(type: "nvarchar(max)", nullable: false),
